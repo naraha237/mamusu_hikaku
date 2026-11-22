@@ -192,7 +192,10 @@ export function ComparePage({
               </select>
             </label>
           </div>
-          <StatTable umas={umas} onReorder={onReorder} heatmap={settings.heatmap} baselineId={baseline} />
+          <StatTable umas={umas} onReorder={onReorder} heatmap={settings.heatmap}
+            baselineId={baseline}
+            hideAtOrBelow={settings.hideAptitudeAtOrBelow}
+          />
           <h3 className="text-lg font-bold">ステータスのグラフ</h3>
           <p className="text-sm text-slate-500">下の名前を押すと、その人の線を隠したり出したりできます。</p>
           <StatRadar umas={umas} />

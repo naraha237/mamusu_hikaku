@@ -70,11 +70,12 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-        <table className="w-max min-w-full border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 dark:border-slate-700">
-              <th className="sticky left-0 z-10 min-w-64 bg-slate-50 px-3 py-2 text-left font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+      {/* 表の中だけをスクロールさせ、ウマ娘名の行(見出し)を上に固定する */}
+      <div className="max-h-[calc(100vh-13rem)] overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">
+        <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+          <thead className="sticky top-0 z-20 bg-slate-50 shadow-sm dark:bg-slate-800">
+            <tr>
+              <th className="sticky left-0 z-30 min-w-64 border-b border-slate-200 bg-slate-50 px-3 py-2 text-left font-normal text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                 スキル
               </th>
               {umas.map((u, i) => {
@@ -83,7 +84,10 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
                   return isGold(m?.type ?? s.type);
                 }).length;
                 return (
-                  <th key={u.id} className="min-w-28 px-3 py-2 text-center align-top">
+                  <th
+                    key={u.id}
+                    className="min-w-28 border-b border-slate-200 bg-slate-50 px-3 py-2 text-center align-top dark:border-slate-700 dark:bg-slate-800"
+                  >
                     <div className="flex items-center justify-center gap-1.5">
                       <span className={`h-3 w-3 rounded-full ${COLUMN_COLORS[i % COLUMN_COLORS.length].dot}`} />
                       <span className="font-bold">{umaLabel(u)}</span>
@@ -133,7 +137,7 @@ function SkillGroup({
       <tr>
         <th
           colSpan={umas.length + 1}
-          className={`sticky left-0 px-3 py-1 text-left font-bold ${
+          className={`sticky left-0 z-10 px-3 py-1 text-left font-bold ${
             onlyOne ? "bg-amber-100 dark:bg-amber-900" : "bg-slate-100 dark:bg-slate-700"
           }`}
         >
@@ -143,14 +147,16 @@ function SkillGroup({
         </th>
       </tr>
       {rows.map((r) => (
-        <tr key={r.key} className="border-b border-slate-100 dark:border-slate-800">
-          <th className="sticky left-0 z-10 bg-white px-3 py-1 text-left font-normal dark:bg-slate-900">
+        <tr key={r.key}>
+          <th className="sticky left-0 z-10 border-b border-slate-100 bg-white px-3 py-1 text-left font-normal dark:border-slate-800 dark:bg-slate-900">
             <SkillName name={r.name} type={r.type} master={r.master} />
           </th>
           {r.owned.map((s, i) => (
             <td
               key={umas[i].id}
-              className={`px-3 py-1 text-center ${onlyOne && s ? COLUMN_COLORS[i % COLUMN_COLORS.length].soft : ""}`}
+              className={`border-b border-slate-100 px-3 py-1 text-center dark:border-slate-800 ${
+                onlyOne && s ? COLUMN_COLORS[i % COLUMN_COLORS.length].soft : ""
+              }`}
             >
               {s ? (
                 <span aria-label="所持">

@@ -10,9 +10,11 @@ export type UiSettings = {
   fontSize: FontSize;
   /** 比較表のステータスに濃淡の背景を付ける */
   heatmap: boolean;
+  /** 比べる人全員がこの評価以下の適性の行を隠す("none" なら隠さない) */
+  hideAptitudeAtOrBelow: "none" | "G" | "F" | "E" | "D";
 };
 
-const DEFAULTS: UiSettings = { theme: "system", fontSize: "normal", heatmap: true };
+const DEFAULTS: UiSettings = { theme: "system", fontSize: "normal", heatmap: true, hideAptitudeAtOrBelow: "none" };
 const FILE = "settings.json";
 
 type Ctx = { settings: UiSettings; update: (patch: Partial<UiSettings>) => void };

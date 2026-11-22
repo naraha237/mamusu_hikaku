@@ -4,7 +4,7 @@ import type { MasterOrigin } from "../lib/skills/master";
 import type { MasterSkill } from "../lib/skills/types";
 import { WIKI_SOURCE } from "../lib/skills/constants";
 import { ExternalLink } from "../components/ExternalLink";
-import { useSettings, type FontSize, type Theme } from "../lib/settings";
+import { useSettings, type FontSize, type Theme, type UiSettings } from "../lib/settings";
 
 const ORIGIN_LABEL: Record<MasterOrigin, string> = {
   distribution: "インターネットから取得したもの",
@@ -102,6 +102,23 @@ function DisplaySettings() {
             { value: "large", label: "大きめ" },
           ]}
         />
+        <span>適性を隠す</span>
+        <div className="space-y-1">
+          <Choice<UiSettings["hideAptitudeAtOrBelow"]>
+            value={settings.hideAptitudeAtOrBelow}
+            onChange={(hideAptitudeAtOrBelow) => update({ hideAptitudeAtOrBelow })}
+            options={[
+              { value: "none", label: "隠さない" },
+              { value: "G", label: "G" },
+              { value: "F", label: "F以下" },
+              { value: "E", label: "E以下" },
+              { value: "D", label: "D以下" },
+            ]}
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            比べる人が全員この評価以下の適性(例:全員ダートが G)は、くらべる画面に出しません。
+          </p>
+        </div>
       </div>
     </section>
   );

@@ -11,6 +11,7 @@ import {
   STAT_LABEL,
   statTotal,
   umaLabel,
+  type Grade,
   type UmaEntry,
 } from "../../lib/uma/types";
 import { useSkillMaster } from "../../lib/skills/SkillMasterContext";
@@ -60,12 +61,22 @@ export function StatTable({
   onReorder,
   heatmap,
   baselineId,
+  hideAtOrBelow,
 }: {
   umas: UmaEntry[];
   onReorder: (ids: string[]) => void;
   heatmap: boolean;
   baselineId: string | null;
+  /** 全員がこの評価以下の適性の行を隠す */
+  hideAtOrBelow: Grade | "none";
 }) {
+  const aptitudeRows =
+    hideAtOrBelow === "none"
+      ? APTITUDE_ROWS
+      : APTITUDE_ROWS.filter((r) =>
+          umas.some((u) => gradeValue(getAptitude(u.aptitude, r.group, r.key)) > gradeValue(hideAtOrBelow)),
+        );
+  const hiddenAptitudes = APTITUDE_ROWS.length - aptitudeRows.length;
   const { skills: master } = useSkillMaster();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const baseline = umas.find((u) => u.id === baselineId) ?? null;
@@ -165,7 +176,7 @@ export function StatTable({
             {numberRow("合計", (u) => statTotal(u.stats), { heat: true, bold: true })}
 
             {section("適性")}
-            {APTITUDE_ROWS.map((r) => {
+            {aptitudeRows.map((r) => {
               const grades = umas.map((u) => getAptitude(u.aptitude, r.group, r.key));
               const ex = extremes(grades.map(gradeValue));
               return (
@@ -186,6 +197,14 @@ export function StatTable({
                 </tr>
               );
             })}
+
+            {hiddenAptitudes > 0 && (
+              <tr className="border-b border-slate-100 dark:border-slate-800">
+                <td colSpan={umas.length + 1} className="sticky left-0 px-3 py-1 text-xs text-slate-500 dark:text-slate-400">
+                  全員が {hideAtOrBelow === "G" ? "G" : `${hideAtOrBelow}以下`} の適性({hiddenAptitudes}つ)を隠しています。設定で変えられます。
+                </td>
+              </tr>
+            )}
 
             {section("スキル")}
             {textRow("スキルの数", (u) => (
