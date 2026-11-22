@@ -15,10 +15,13 @@ import { parseSkillsPage } from "../src/lib/skills/wikiParser";
 import { toKatakana } from "../src/lib/text";
 import { parseCards, parseRanks } from "../src/lib/umaData/gametora";
 import type { RankStep, UmaCard, UmaDataFile } from "../src/lib/umaData/types";
+import { parseTracks } from "../src/lib/courses/gametora";
+import type { CoursesFile, Track } from "../src/lib/courses/types";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const OUT = resolve(ROOT, "data/skills.json");
 const UMAS_OUT = resolve(ROOT, "data/umas.json");
+const COURSES_OUT = resolve(ROOT, "data/courses.json");
 /** 最後に取得を試みた日時など(git には入れない) */
 const STATE = resolve(ROOT, "data/.sync-state.json");
 const CACHE_HOURS = 24;
@@ -85,7 +88,7 @@ async function fetchGameToraData(manifest: Record<string, string>, key: string):
 }
 
 /** GameTora(スキル・衣装・評価ランクの表) */
-async function fetchGameTora(): Promise<{ skills: MasterSkill[]; version: string; cards: UmaCard[]; ranks: RankStep[] }> {
+async function fetchGameTora(): Promise<{ skills: MasterSkill[]; version: string; cards: UmaCard[]; ranks: RankStep[]; tracks: Track[] }> {
   await checkRobots(GAMETORA_SOURCE.origin, "/data/umamusume/skills.json", GAMETORA_SOURCE.name);
   const mRes = await fetchWithRetry(GAMETORA_SOURCE.manifestUrl);
   if (!mRes.ok) fail(`GameTora の目次を取得できませんでした(HTTP ${mRes.status})。`);
@@ -93,7 +96,19 @@ async function fetchGameTora(): Promise<{ skills: MasterSkill[]; version: string
   const skills = parseGameTora(await fetchGameToraData(manifest, "skills"));
   const cards = parseCards(await fetchGameToraData(manifest, "character-cards"));
   const ranks = parseRanks(await fetchGameToraData(manifest, "db-files/single_mode_rank"));
-  return { skills, version: manifest.skills, cards, ranks };
+  const tracks = parseTracks(await fetchGameToraData(manifest, "racetracks"), await fetchGameToraData(manifest, "racetracks_extended"));
+  return { skills, version: manifest.skills, cards, ranks, tracks };
+}
+
+/** data/courses.json(レース場・コース)を書き出す。変わっていなければ書かない */
+function writeCourses(tracks: Track[]) {
+  const courses = tracks.reduce((n, t) => n + t.courses.length, 0);
+  if (tracks.length < 10 || courses < 80) fail(`GameTora のレース場(${tracks.length}か所・${courses}コース)が少なすぎます。`);
+  const prev: CoursesFile | null = existsSync(COURSES_OUT) ? JSON.parse(readFileSync(COURSES_OUT, "utf8")) : null;
+  if (prev && JSON.stringify(prev.tracks) === JSON.stringify(tracks)) return;
+  const file: CoursesFile = { source: GAMETORA_SOURCE.name, sourceUrl: "https://gametora.com/umamusume/racetracks", fetchedAt: new Date().toISOString(), tracks };
+  writeFileSync(COURSES_OUT, JSON.stringify(file) + "\n");
+  log(`- ${COURSES_OUT} を更新しました(${tracks.length}か所・${courses}コース)。`);
 }
 
 /** data/umas.json(ウマ娘の名前・衣装・評価ランクの表)を書き出す。変わっていなければ書かない */
@@ -175,6 +190,7 @@ async function main() {
   if (gtProblem) fail(`GameTora: ${gtProblem} skills.json は更新しませんでした。`);
 
   writeUmas(gt.cards, gt.ranks, gt.version);
+  writeCourses(gt.tracks);
 
   const skills = mergeSources(wiki.skills, gt.skills);
   const countError = checkCount(skills.length, prev?.skills.length);

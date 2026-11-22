@@ -19,6 +19,8 @@ export type MasterSkill = {
   kana?: string;
   /** 発動する脚質・距離・バ場の決まり(書いていない項目は、どれでも発動する) */
   limits?: SkillLimits;
+  /** 発動条件(GameTora の書き方。例:"phase==1&corner!=0"。「@」は「または」) */
+  cond?: string;
   /** 同じ系統のスキル(右回り○・右回り◎・右回りの鬼 など)に共通の番号。比較で「共通」として扱う */
   family?: string;
 };

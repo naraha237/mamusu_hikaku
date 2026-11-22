@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import { buildSkillRows, COLUMN_COLORS, isGold, variantLabel, type SkillRow } from "../../lib/compare";
 import { useSkillMaster } from "../../lib/skills/SkillMasterContext";
 import { SKILL_TYPE_LABEL } from "../../lib/skills/search";
-import type { SkillType } from "../../lib/skills/types";
+import type { MasterSkill, SkillType } from "../../lib/skills/types";
 import { normalizeForSearch } from "../../lib/text";
 import { umaLabel, type UmaEntry } from "../../lib/uma/types";
 import { inputClass } from "../ui";
 import { LimitFilterBar } from "./LimitFilterBar";
+import { useCourseWarning } from "../../lib/courses/useCourseWarning";
 import { EMPTY_LIMIT_FILTER, matchesLimits, type LimitFilter } from "../../lib/skills/limits";
 import { Portrait } from "../SkillIcon";
 import { SkillName, TYPE_CHIP } from "./SkillName";
@@ -20,6 +21,7 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
   const [limitFilter, setLimitFilter] = useState<LimitFilter>(EMPTY_LIMIT_FILTER);
   /** group = 「1人だけ/一部/全員」に分ける、order = 分けずに上から順に並べる */
   const [mode, setMode] = useState<"group" | "order">("group");
+  const { warn } = useCourseWarning(limitFilter.eventLabel);
   const rows = useMemo(() => buildSkillRows(umas, master), [umas, master]);
   const n = umas.length;
 
@@ -130,7 +132,7 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
           </thead>
           <tbody>
             {groups.map((g) => (
-              <SkillGroup key={g.key} title={g.title} note={g.note} rows={g.rows} umas={umas} onlyOne={g.onlyOne} />
+              <SkillGroup key={g.key} title={g.title} note={g.note} rows={g.rows} umas={umas} onlyOne={g.onlyOne} warn={warn} />
             ))}
             {filtered.length === 0 && (
               <tr>
@@ -152,12 +154,15 @@ function SkillGroup({
   rows,
   umas,
   onlyOne,
+  warn,
 }: {
   title: string;
   note?: string;
   rows: SkillRow[];
   umas: UmaEntry[];
   onlyOne?: boolean;
+  /** 選んだイベントのコースで発動しない可能性があるときの理由 */
+  warn: (m?: MasterSkill) => string | undefined;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -177,7 +182,7 @@ function SkillGroup({
       {rows.map((r) => (
         <tr key={r.key}>
           <th className="sticky left-0 z-10 border-b border-slate-100 bg-white px-3 py-1 text-left font-normal dark:border-slate-800 dark:bg-slate-900">
-            <SkillName name={r.name} type={r.type} master={r.master} />
+            <SkillName name={r.name} type={r.type} master={r.master} warning={warn(r.master)} />
           </th>
           {r.owned.map((s, i) => (
             <td

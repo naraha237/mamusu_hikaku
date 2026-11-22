@@ -40,12 +40,12 @@ jobs:
         # どちらかが失敗しても、うまく取れた分はコミットする(失敗した側はファイルを書き換えない)
         if: always()
         run: |
-          if git diff --quiet -- data/skills.json data/umas.json data/events.json; then
+          if git diff --quiet -- data/skills.json data/umas.json data/courses.json data/events.json; then
             echo "変更なし"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/skills.json data/umas.json data/events.json
+          git add data/skills.json data/umas.json data/courses.json data/events.json
           git commit -m "スキル一覧・イベントの予定を最新の内容に更新"
           git push

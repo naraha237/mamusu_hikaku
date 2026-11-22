@@ -23,6 +23,8 @@ import { UmaProvider, useUmas } from "./lib/uma/UmaContext";
 import { UmaDataProvider } from "./lib/umaData/UmaDataContext";
 import { EventsProvider } from "./lib/events/EventsContext";
 import { EventsPage } from "./pages/EventsPage";
+import { CoursesPage } from "./pages/CoursesPage";
+import { CoursesProvider } from "./lib/courses/CoursesContext";
 import { AboutPage } from "./pages/AboutPage";
 import { ComparePage } from "./pages/ComparePage";
 import { ImportPage } from "./pages/ImportPage";
@@ -30,11 +32,12 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { UmaEditor, type EditorReview } from "./pages/UmaEditor";
 import { UmaListPage } from "./pages/UmaListPage";
 
-type Page = "compare" | "events" | "list" | "import" | "settings" | "help" | "about";
+type Page = "compare" | "events" | "courses" | "list" | "import" | "settings" | "help" | "about";
 
 const NAV: { page: Page; label: string }[] = [
   { page: "compare", label: "くらべる" },
   { page: "events", label: "イベント" },
+  { page: "courses", label: "レース場" },
   { page: "list", label: "ウマ娘一覧" },
   { page: "import", label: "画像から取り込む" },
   { page: "settings", label: "設定" },
@@ -186,7 +189,7 @@ function Main() {
       {endedAsk && !showOnboarding && (
         <ConfirmDialog
           danger
-          confirmLabel={`人を消す`}
+          confirmLabel={`${endedAsk.ids.length}人を消す`}
           message={
             <>
               <p className="font-bold">「{endedAsk.tag}」が終わりました。</p>
@@ -203,7 +206,7 @@ function Main() {
             closeEndedAsk();
             for (const id of ids) await remove(id).catch(() => {});
             setSelectedIds((prev) => prev.filter((x) => !ids.includes(x)));
-            setToast(`人のウマ娘を消しました。`);
+            setToast(`${ids.length}人のウマ娘を消しました。`);
           }}
         />
       )}
@@ -264,7 +267,7 @@ function Main() {
                 onExportSelected={async () => {
                   try {
                     if (await exportPackage(buildPackage("share", checked), shareFileName(checked)))
-                      setToast(`人のウマ娘をファイルに書き出しました。家族に渡して、アプリにドラッグ&ドロップしてもらってください。`);
+                      setToast(`${checked.length}人のウマ娘をファイルに書き出しました。家族に渡して、アプリにドラッグ&ドロップしてもらってください。`);
                   } catch {
                     setToast("書き出せませんでした。保存先を変えてもう一度試してください。");
                   }
@@ -298,6 +301,7 @@ function Main() {
               />
             )}
             {page === "settings" && <SettingsPage onOpenPackage={setOpeningPath} />}
+            {page === "courses" && <CoursesPage />}
             {page === "help" && <HelpPage onShowOnboarding={() => setShowOnboarding(true)} onTrySamples={addSamples} />}
             {page === "about" && <AboutPage />}
           </>
@@ -313,9 +317,11 @@ function App() {
       <SkillMasterProvider>
         <UmaDataProvider>
           <EventsProvider>
-            <UmaProvider>
-              <Main />
-            </UmaProvider>
+            <CoursesProvider>
+              <UmaProvider>
+                <Main />
+              </UmaProvider>
+            </CoursesProvider>
           </EventsProvider>
         </UmaDataProvider>
       </SkillMasterProvider>

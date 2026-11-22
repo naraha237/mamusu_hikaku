@@ -13,6 +13,12 @@ type GtSkillCore = {
   condition_groups?: { condition?: string }[];
 };
 
+/** 発動条件の文字列(グループどうしは「@」=または でつなぐ)。コースで発動できるかの確認に使う */
+const condOf = (groups?: { condition?: string }[]) => {
+  const s = (groups ?? []).map((g) => String(g.condition ?? "").trim()).filter(Boolean).join("@");
+  return s || undefined;
+};
+
 const STYLE: Record<string, StyleKey> = { "1": "front", "2": "pace", "3": "late", "4": "end" };
 const DISTANCE: Record<string, DistanceKey> = { "1": "sprint", "2": "mile", "3": "medium", "4": "long" };
 const SURFACE: Record<string, SurfaceKey> = { "1": "turf", "2": "dirt" };
@@ -96,6 +102,7 @@ export function parseGameTora(data: unknown): MasterSkill[] {
       sp: raw.cost ?? 0,
       iconId: raw.iconid,
       limits: parseLimits(raw.condition_groups),
+      cond: condOf(raw.condition_groups),
       // 同じ系統の中でいちばん小さい ID を系統の番号にする(マイナスの「×」は別あつかい)
       family: raw.versions?.length && !/×$/.test(nameJa) ? String(Math.min(raw.id, ...raw.versions)) : undefined,
     });
@@ -110,6 +117,7 @@ export function parseGameTora(data: unknown): MasterSkill[] {
         sp: g.cost ?? 0,
         iconId: g.iconid ?? raw.iconid,
         limits: parseLimits(g.condition_groups ?? raw.condition_groups),
+        cond: condOf(g.condition_groups ?? raw.condition_groups),
       });
     }
   }

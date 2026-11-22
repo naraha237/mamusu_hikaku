@@ -14,7 +14,7 @@ export type SkillDiff = {
 };
 
 // limits(発動の決まり)は入れ子なので、JSON にして比べる
-const FIELDS: (keyof MasterSkill)[] = ["nameJa", "nameEn", "type", "description", "sp", "negative", "iconId", "limits", "family"];
+const FIELDS: (keyof MasterSkill)[] = ["nameJa", "nameEn", "type", "description", "sp", "negative", "iconId", "limits", "family", "cond"];
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
 /** 前後のスキル一覧の差分(追加・削除・変更)を求める */

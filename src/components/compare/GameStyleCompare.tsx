@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { EMPTY_LIMIT_FILTER, matchesLimits, type LimitFilter } from "../../lib/skills/limits";
 import { LimitFilterBar } from "./LimitFilterBar";
+import { useCourseWarning } from "../../lib/courses/useCourseWarning";
 import { buildSkillRows, COLUMN_COLORS, extremes, rowKeyOf, skillKey } from "../../lib/compare";
 import { useSkillMaster } from "../../lib/skills/SkillMasterContext";
 import { getAptitude, gradeValue, STAT_KEYS, STAT_LABEL, statTotal, umaLabel, type Aptitude, type UmaEntry } from "../../lib/uma/types";
@@ -48,6 +49,7 @@ export function GameStyleCompare({ umas, hideAtOrBelow }: { umas: UmaEntry[]; hi
   const countByKey = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
   const masterById = useMemo(() => new Map(master.map((m) => [m.id, m])), [master]);
   const [limitFilter, setLimitFilter] = useState<LimitFilter>(EMPTY_LIMIT_FILTER);
+  const { warn } = useCourseWarning(limitFilter.eventLabel);
 
   const statEx = STAT_KEYS.map((k) => extremes(umas.map((u) => u.stats[k])));
   const totalEx = extremes(umas.map((u) => statTotal(u.stats)));
@@ -153,7 +155,7 @@ export function GameStyleCompare({ umas, hideAtOrBelow }: { umas: UmaEntry[]; hi
                       title={s.name}
                     >
                       {onlyMe && "★"}
-                      <SkillName compact name={own?.nameJa ?? s.name} type={own?.type ?? s.type} master={own} />
+                      <SkillName compact name={own?.nameJa ?? s.name} type={own?.type ?? s.type} master={own} warning={warn(own)} />
                       {s.level ? <span className="ml-1">Lv{s.level}</span> : null}
                     </li>
                   );

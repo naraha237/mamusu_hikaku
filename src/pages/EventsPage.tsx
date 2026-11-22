@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { CourseDiagram } from "../components/CourseDiagram";
+import { courseOfEvent, useCourses } from "../lib/courses/CoursesContext";
 import { ExternalLink } from "../components/ExternalLink";
 import { Portrait } from "../components/SkillIcon";
 import { Button, GradeBadge, Notice } from "../components/ui";
@@ -35,6 +37,9 @@ const bestStyle = (u: UmaEntry) =>
 
 export function EventsPage({ onCompare }: { onCompare: (ids: string[]) => void }) {
   const data = useEvents();
+  const courses = useCourses();
+  /** 「コースを見る」で開いているイベント */
+  const [open, setOpen] = useState<string | null>(null);
   const { umas } = useUmas();
   const now = Date.now();
   // 終わったイベントは出さない
@@ -70,6 +75,19 @@ export function EventsPage({ onCompare }: { onCompare: (ids: string[]) => void }
                 <span>{ev.course.text}</span>
               </div>
             )}
+            {(() => {
+              const found = courseOfEvent(ev, courses.tracks);
+              if (!found) return null;
+              const key = `${ev.name}-${ev.when}-${i}`;
+              return (
+                <div className="space-y-2">
+                  <button className="text-sm text-sky-700 underline dark:text-sky-300" onClick={() => setOpen((o) => (o === key ? null : key))}>
+                    {open === key ? "▼ コースを閉じる" : "▶ コースを見る"}
+                  </button>
+                  {open === key && <CourseDiagram track={found.track} course={found.course} />}
+                </div>
+              );
+            })()}
             {ev.rules?.map((r) => (
               <div key={r} className="text-sm">
                 <span className="rounded bg-amber-100 px-2 py-0.5 text-amber-900 dark:bg-amber-900 dark:text-amber-50">特殊ルール</span> {r}

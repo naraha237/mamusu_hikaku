@@ -13,7 +13,7 @@ export function LimitFilterBar({ value, onChange }: { value: LimitFilter; onChan
         className={`rounded-full border px-2.5 py-0.5 text-sm ${
           on ? "border-transparent bg-sky-600 font-bold text-white" : "border-slate-300 dark:border-slate-600"
         }`}
-        onClick={() => onChange({ ...value, [axis]: on ? list.filter((k) => k !== key) : [...list, key] })}
+        onClick={() => onChange({ ...value, eventLabel: axis === "style" ? value.eventLabel : undefined, [axis]: on ? list.filter((k) => k !== key) : [...list, key] })}
       >
         {label}
       </button>
@@ -35,11 +35,12 @@ export function LimitFilterBar({ value, onChange }: { value: LimitFilter; onChan
           <span className="text-slate-500">イベント:</span>
           <select
             className="rounded border border-slate-300 bg-white px-1 py-0.5 dark:border-slate-600 dark:bg-slate-800"
-            value={current?.label ?? ""}
+            value={value.eventLabel ?? current?.label ?? ""}
             onChange={(e) => {
               const o = options.find((x) => x.label === e.target.value);
               onChange({
                 ...value,
+                eventLabel: o?.label,
                 distance: o?.event.course?.distance ? [o.event.course.distance] : [],
                 surface: o?.event.course?.surface ? [o.event.course.surface] : [],
               });
@@ -77,7 +78,7 @@ export function LimitFilterBar({ value, onChange }: { value: LimitFilter; onChan
             />
             どれでも発動するスキルも出す
           </label>
-          <button className="text-sm text-sky-700 underline dark:text-sky-300" onClick={() => onChange({ style: [], distance: [], surface: [], includeGeneral: true })}>
+          <button className="text-sm text-sky-700 underline dark:text-sky-300" onClick={() => onChange({ style: [], distance: [], surface: [], includeGeneral: true, eventLabel: undefined })}>
             絞り込みをやめる
           </button>
         </>

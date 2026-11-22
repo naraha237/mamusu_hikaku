@@ -120,6 +120,13 @@ $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content .secrets\updater.key -Raw; npm run 
 
 自動更新の確認先(`latest.json` のURL)と公開鍵は `src-tauri/tauri.conf.json` の `plugins.updater` にあります。
 
+## レース場・コース
+
+- 取得元:GameTora のレース場のデータ(`racetracks`・`racetracks_extended`)。スキル一覧と同じ同期で `data/courses.json` を作ります(17か所・138コース。コーナー・直線・坂・フェーズの位置)。
+- アプリの「レース場」画面と、「イベント」画面の「コースを見る」で、コースの形を表示します。
+- スキルの発動条件(GameTora の `condition_groups`)を `skills.json` の `cond` に入れ、
+  `src/lib/courses/feasibility.ts` で「そのコースに、条件に合う場所があるか」を調べます。くらべる画面でイベントを選ぶと、発動できないスキルに ⚠ を出します。
+
 ## イベントの予定
 
 - 取得元:[ウマ娘 プリティーダービー 公式ポータルサイト「お知らせ」](https://umamusume.jp/news/)。

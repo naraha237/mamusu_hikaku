@@ -24,7 +24,7 @@ export function TypeChip({ type }: { type?: SkillType }) {
 }
 
 /** スキル名。カーソルを合わせると説明と必要SPを出す(表のスクロールで隠れないよう、画面の上に重ねて出す) */
-export function SkillName({ name, type, master, compact }: { name: string; type?: SkillType; master?: MasterSkill; /** 種類の札を出さない(狭い所用) */ compact?: boolean }) {
+export function SkillName({ name, type, master, compact, warning }: { name: string; type?: SkillType; master?: MasterSkill; /** 種類の札を出さない(狭い所用) */ compact?: boolean; /** 選んだイベントのコースで発動しない可能性があるとき、その理由 */ warning?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number; above: boolean } | null>(null);
   const hasInfo = !!master && (!!master.description || (master.sp ?? 0) > 0 || !!master.limits);
 
@@ -46,6 +46,11 @@ export function SkillName({ name, type, master, compact }: { name: string; type?
       {!master && (
         <span className="rounded bg-amber-100 px-1 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-50">
           一覧にない
+        </span>
+      )}
+      {warning && (
+        <span className="cursor-help rounded bg-amber-200 px-1 text-xs font-bold text-amber-900 dark:bg-amber-700 dark:text-amber-50" title={warning}>
+          ⚠{compact ? "" : " 発動しない可能性があります"}
         </span>
       )}
       {pos &&

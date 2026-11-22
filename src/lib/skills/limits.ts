@@ -21,6 +21,8 @@ export type LimitFilter = {
   surface: SurfaceKey[];
   /** 決まりのない(どれでも発動する)スキルも出すか */
   includeGeneral: boolean;
+  /** 選んだイベント(そのコースで発動しないスキルに ⚠ を出す) */
+  eventLabel?: string;
 };
 
 export const EMPTY_LIMIT_FILTER: LimitFilter = { style: [], distance: [], surface: [], includeGeneral: true };
