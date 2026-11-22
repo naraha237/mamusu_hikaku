@@ -28,17 +28,24 @@ jobs:
 
       - run: npm ci --ignore-scripts
 
-      - name: Wiki から取得
+      - name: スキル一覧・衣装・ランク表を取得
         run: npx tsx scripts/sync-skills.ts
 
+      - name: 公式サイトからイベントの予定を取得
+        # スキル一覧の取得が失敗しても、こちらは動かす
+        if: always()
+        run: npx tsx scripts/sync-events.ts
+
       - name: 変更があればコミット
+        # どちらかが失敗しても、うまく取れた分はコミットする(失敗した側はファイルを書き換えない)
+        if: always()
         run: |
-          if git diff --quiet -- data/skills.json data/umas.json; then
+          if git diff --quiet -- data/skills.json data/umas.json data/events.json; then
             echo "変更なし"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/skills.json data/umas.json
-          git commit -m "スキル一覧を Wiki の最新の内容に更新"
+          git add data/skills.json data/umas.json data/events.json
+          git commit -m "スキル一覧・イベントの予定を最新の内容に更新"
           git push

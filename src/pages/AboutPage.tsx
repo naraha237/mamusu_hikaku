@@ -49,6 +49,14 @@ export function AboutPage() {
             スキルの日本語の説明・進化スキル・アイコンの画像を取得して利用しています。
           </p>
         </div>
+        <div>
+          <p className="font-bold">イベントの予定</p>
+          <p className="text-sm">
+            <ExternalLink href="https://umamusume.jp/news/">ウマ娘 プリティーダービー 公式ポータルサイト「お知らせ」</ExternalLink>
+            <br />
+            対戦レースイベントの予定・開催期間・コースを、お知らせから読み取って表示しています。
+          </p>
+        </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           「ウマ娘 プリティーダービー」は株式会社Cygamesの作品です。このアプリは非公式のもので、Cygames とは関係ありません。
         </p>

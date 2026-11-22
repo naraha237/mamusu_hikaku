@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "sync-skills": "tsx scripts/sync-skills.ts"
+    "sync-skills": "tsx scripts/sync-skills.ts",
+    "sync-events": "tsx scripts/sync-events.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -11,6 +11,8 @@ import { makeSampleUmas } from "./lib/uma/sampleData";
 import { emptyUma, MAX_COMPARE, type UmaEntry } from "./lib/uma/types";
 import { UmaProvider, useUmas } from "./lib/uma/UmaContext";
 import { UmaDataProvider } from "./lib/umaData/UmaDataContext";
+import { EventsProvider } from "./lib/events/EventsContext";
+import { EventsPage } from "./pages/EventsPage";
 import { AboutPage } from "./pages/AboutPage";
 import { ComparePage } from "./pages/ComparePage";
 import { ImportPage } from "./pages/ImportPage";
@@ -18,10 +20,11 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { UmaEditor, type EditorReview } from "./pages/UmaEditor";
 import { UmaListPage } from "./pages/UmaListPage";
 
-type Page = "compare" | "list" | "import" | "settings" | "about";
+type Page = "compare" | "events" | "list" | "import" | "settings" | "about";
 
 const NAV: { page: Page; label: string }[] = [
   { page: "compare", label: "くらべる" },
+  { page: "events", label: "イベント" },
   { page: "list", label: "ウマ娘一覧" },
   { page: "import", label: "画像から取り込む" },
   { page: "settings", label: "設定" },
@@ -147,6 +150,14 @@ function Main() {
                 }
               />
             )}
+            {page === "events" && (
+              <EventsPage
+                onCompare={(ids) => {
+                  setSelectedIds(ids.slice(0, MAX_COMPARE));
+                  setPage("compare");
+                }}
+              />
+            )}
             {page === "settings" && <SettingsPage />}
             {page === "about" && <AboutPage />}
           </>
@@ -161,9 +172,11 @@ function App() {
     <SettingsProvider>
       <SkillMasterProvider>
         <UmaDataProvider>
-          <UmaProvider>
-            <Main />
-          </UmaProvider>
+          <EventsProvider>
+            <UmaProvider>
+              <Main />
+            </UmaProvider>
+          </EventsProvider>
         </UmaDataProvider>
       </SkillMasterProvider>
     </SettingsProvider>

@@ -41,3 +41,4 @@ data/.sync-state.json
 
 # OCR の試験用のスクリーンショット(ゲームの画像なので公開リポジトリに入れない)
 samples/
+data/.sync-events-state.json

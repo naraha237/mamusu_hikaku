@@ -111,6 +111,21 @@ $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content .secrets\updater.key -Raw; npm run 
 
 自動更新の確認先(`latest.json` のURL)と公開鍵は `src-tauri/tauri.conf.json` の `plugins.updater` にあります。
 
+## イベントの予定
+
+- 取得元:[ウマ娘 プリティーダービー 公式ポータルサイト「お知らせ」](https://umamusume.jp/news/)。
+  お知らせの一覧(ページが自分で読み込んでいる `/api/ajax/pr_info_index`)の1ページ目から、
+  「○月～○月対戦レースイベント」(半年分の予定)と、最近のチャンピオンズミーティング・リーグ オブ ヒーローズの開催のお知らせ(最大6件)を読み、
+  開催期間・コース・特殊ルールを `data/events.json` にまとめます(`scripts/sync-events.ts`)。
+- スキル一覧と同じ GitHub Actions で毎日取得し、アプリは起動時に GitHub の `data/events.json` を確認します。
+- アプリの「イベント」画面で、これからのイベントと、コースに合う(バ場・距離の適性が A 以上の)登録ウマ娘を表示します。
+
+手元で取得し直すとき:
+
+```powershell
+npm run sync-events -- --force
+```
+
 ## スキルの一覧
 
 - 取得元:
