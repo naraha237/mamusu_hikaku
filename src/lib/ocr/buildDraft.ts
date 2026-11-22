@@ -227,10 +227,17 @@ export function buildDraft(analyses: Analysis[], master: MasterSkill[], umaData?
   });
 
   // ライブキャプチャ(たくさんの画像)では、同じスキルが何枚にも写る。
-  // 1枚にしか出てこない、確かでない読み取りは、読み違いとみなして捨てる
+  // 1枚にしか出てこない、一致の度合いが低い読み取りは、読み違いとみなして捨てる
   const finalSkills =
     options.voting && ok.length >= 5
-      ? skills.filter((s) => s.review?.status === "ok" || atEdgeImage.has(keyOf(s)) || (seenCount.get(keyOf(s)) ?? 0) >= 2)
+      ? skills.filter(
+          (s) =>
+            s.review?.status === "ok" ||
+            atEdgeImage.has(keyOf(s)) ||
+            (seenCount.get(keyOf(s)) ?? 0) >= 2 ||
+            // 名前の短いスキル(3文字など)は1文字の読み違いで点が下がるので、ある程度近ければ残す
+            (s.review?.status === "check" && (s.review?.score ?? 0) >= 0.6),
+        )
       : skills;
 
   uma.portrait = ok.find((a) => a.portraitPng)?.portraitPng ?? undefined;

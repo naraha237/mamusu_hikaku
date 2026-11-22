@@ -22,13 +22,15 @@ const LOOKALIKE: Record<string, string> = {
   各: "冬",
   呑: "春",
   漱: "秋",
+  // 「深呼吸」の 呼 を 評 と読み違えた
+  評: "呼",
 };
 
 /** 照らし合わせ用に文字をそろえる(記号・空白・句読点を除き、カタカナ・半角にそろえる) */
 export function normalizeForMatch(s: string): string {
   return toKatakana(s.normalize("NFKC"))
     .toLowerCase()
-    .replace(/[力口工夕二八卜一了各呑漱]/g, (c) => LOOKALIKE[c])
+    .replace(/[力口工夕二八卜一了各呑漱評]/g, (c) => LOOKALIKE[c])
     .replace(/[\s、。,.!！?？・･「」『』"“”'’ー―\-~〜…:：;；/／]/g, "")
     .replace(/[◎○〇×]/g, "");
 }
