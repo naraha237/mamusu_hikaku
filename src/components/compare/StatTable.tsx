@@ -37,7 +37,7 @@ function SortableHeader({ uma, index, children }: { uma: UmaEntry; index: number
     <th
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`min-w-40 border-b border-slate-200 px-3 py-2 text-left align-top dark:border-slate-700 ${
+      className={`w-44 min-w-44 border-b border-slate-200 px-3 py-2 text-left align-top dark:border-slate-700 ${
         isDragging ? "relative z-20 bg-white opacity-90 shadow-lg dark:bg-slate-800" : ""
       }`}
     >
@@ -147,9 +147,9 @@ export function StatTable({
   );
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+    <div className="w-fit max-w-full overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <table className="w-max min-w-full border-collapse text-sm">
+        <table className="w-max border-collapse text-sm">
           <thead>
             <tr>
               <th className={`${stickyHead} border-b border-slate-200 px-3 py-2 dark:border-slate-700`}>項目</th>
@@ -169,7 +169,6 @@ export function StatTable({
           <tbody>
             {section("基本情報")}
             {textRow("衣装・二つ名", (u) => u.outfit)}
-            {textRow("誰の育成か", (u) => u.owner)}
             {textRow("評価ランク", (u) => u.rank && <span className="font-bold">{u.rank}</span>)}
             {numberRow("評価点", (u) => u.score)}
 

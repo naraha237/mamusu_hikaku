@@ -1,5 +1,10 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useState, type ReactNode } from "react";
+import { closestCenter, DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortable";
+import { useMemo, useState, type ReactNode } from "react";
+import { SortableItem } from "../components/SortableItem";
+import { useUmaData } from "../lib/umaData/UmaDataContext";
+import { rankFromScore } from "../lib/umaData/types";
 import { Portrait, SkillIcon } from "../components/SkillIcon";
 import { SkillInput } from "../components/SkillInput";
 import { Button, inputClass, Notice } from "../components/ui";
@@ -47,6 +52,28 @@ function Field({ label, children, hint, check }: { label: string; children: Reac
       {check?.reason && <span className="text-xs text-amber-700 dark:text-amber-300">{check.reason}</span>}
       {hint && <span className="text-xs text-slate-500">{hint}</span>}
     </label>
+  );
+}
+
+/** 「これかも」の候補ボタン(要確認のとき) */
+function OptionButtons({ options, current, onPick }: { options?: string[]; current?: string; onPick: (v: string) => void }) {
+  if (!options?.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1 text-xs">
+      <span>これかも:</span>
+      {options.map((o) => (
+        <button
+          key={o}
+          type="button"
+          className={`rounded border px-2 py-0.5 ${
+            o === current ? "border-sky-500 bg-sky-100 font-bold dark:bg-sky-900" : "border-slate-300 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-800"
+          }`}
+          onClick={() => onPick(o)}
+        >
+          {o}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -137,14 +164,18 @@ export function UmaEditor({
   const { save, umas } = useUmas();
   const { skills: master } = useSkillMaster();
   const [uma, setUma] = useState<UmaEntry>(initial);
-  const [skills, setSkills] = useState<ReviewSkill[]>(initialSkills ?? initial.skills);
+  const [skills, setSkills] = useState<ReviewSkill[]>(() => (initialSkills ?? initial.skills).map((s) => ({ ...s, uid: newId() })));
   const [fields, setFields] = useState<Record<string, FieldReview>>(review?.fields ?? {});
   const [registering, setRegistering] = useState<number | null>(null);
+  /** 「直す」で入力中のスキル */
+  const [fixing, setFixing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const isNew = !umas.some((u) => u.id === initial.id);
-  const owners = [...new Set(umas.map((u) => u.owner).filter(Boolean))] as string[];
   const masterById = new Map(master.map((m) => [m.id, m]));
+  const umaData = useUmaData();
+  const umaNames = useMemo(() => [...new Set(umaData.cards.map((c) => c.name))], [umaData]);
+  const outfitsOfName = useMemo(() => umaData.cards.filter((c) => c.name === uma.name).map((c) => c.outfit), [umaData, uma.name]);
 
   const set = (patch: Partial<UmaEntry>) => setUma((u) => ({ ...u, ...patch }));
   /** 手で直した項目は「要確認」を外す */
@@ -189,7 +220,7 @@ export function UmaEditor({
     setSaving(true);
     try {
       // 確認用の情報は保存しない
-      const cleanSkills = skills.map(({ review: _review, ...s }) => s);
+      const cleanSkills = skills.map(({ review: _review, uid: _uid, ...s }) => s);
       await save({ ...uma, name: uma.name.trim(), skills: cleanSkills });
       onDone();
     } catch {
@@ -199,12 +230,13 @@ export function UmaEditor({
     }
   };
 
-  const moveSkill = (i: number, d: -1 | 1) => {
-    const j = i + d;
-    if (j < 0 || j >= skills.length) return;
-    const list = [...skills];
-    [list[i], list[j]] = [list[j], list[i]];
-    setSkills(list);
+  // 並べ替え(つまんで移動)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const onSkillDragEnd = (e: DragEndEvent) => {
+    if (!e.over || e.active.id === e.over.id) return;
+    const from = skills.findIndex((s) => s.uid === e.active.id);
+    const to = skills.findIndex((s) => s.uid === e.over!.id);
+    if (from >= 0 && to >= 0) setSkills(arrayMove(skills, from, to));
   };
 
   const factors = uma.factors ?? [];
@@ -233,35 +265,41 @@ export function UmaEditor({
         <Field label="ウマ娘の名前(必須)" check={fields.name}>
           <input
             className={`${inputClass} ${fields.name ? CHECK_RING : ""}`}
+            list="uma-name-options"
             value={uma.name}
             onChange={(e) => {
               touched("name");
               set({ name: e.target.value });
             }}
           />
+          <datalist id="uma-name-options">
+            {umaNames.map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
+          <OptionButtons options={fields.name?.options} current={uma.name} onPick={(v) => (touched("name"), set({ name: v }))} />
         </Field>
         <Field label="衣装・二つ名" check={fields.outfit}>
           <input
             className={`${inputClass} ${fields.outfit ? CHECK_RING : ""}`}
+            list="uma-outfit-options"
             value={uma.outfit ?? ""}
             onChange={(e) => {
               touched("outfit");
               set({ outfit: e.target.value || undefined });
             }}
           />
+          <datalist id="uma-outfit-options">
+            {outfitsOfName.map((o) => (
+              <option key={o} value={o} />
+            ))}
+          </datalist>
+          <OptionButtons options={fields.outfit?.options} current={uma.outfit} onPick={(v) => (touched("outfit"), set({ outfit: v }))} />
         </Field>
         <Field label="メモ名" hint="例:チャンミ用逃げ">
           <input className={inputClass} value={uma.nickname ?? ""} onChange={(e) => set({ nickname: e.target.value || undefined })} />
         </Field>
-        <Field label="誰の育成か" hint="例:父、妹">
-          <input className={inputClass} list="owner-options" value={uma.owner ?? ""} onChange={(e) => set({ owner: e.target.value || undefined })} />
-          <datalist id="owner-options">
-            {owners.map((o) => (
-              <option key={o} value={o} />
-            ))}
-          </datalist>
-        </Field>
-        <Field label="評価ランク" hint={review ? "ランクは画面から読み取れないので、手で入れてください" : undefined}>
+        <Field label="評価ランク" hint="評価点から自動で計算します">
           <input className={inputClass} list="rank-options" value={uma.rank ?? ""} onChange={(e) => set({ rank: e.target.value || undefined })} />
           <datalist id="rank-options">
             {RANK_OPTIONS.map((r) => (
@@ -277,7 +315,8 @@ export function UmaEditor({
             onChange={(e) => {
               touched("score");
               const v = e.target.value.normalize("NFKC").replace(/[^\d]/g, "");
-              set({ score: v ? Number(v) : undefined });
+              const score = v ? Number(v) : undefined;
+              set({ score, rank: rankFromScore(score, umaData.ranks) ?? uma.rank });
             }}
           />
         </Field>
@@ -337,59 +376,85 @@ export function UmaEditor({
               return;
             }
             setError(null);
-            setSkills([...skills, { name, skillId: skill?.id, type: skill?.type, level: skill?.type === "unique" ? 1 : undefined }]);
+            setSkills([...skills, { uid: newId(), name, skillId: skill?.id, type: skill?.type, level: skill?.type === "unique" ? 1 : undefined }]);
           }}
         />
-        <ul className="divide-y divide-slate-200 rounded border border-slate-200 dark:divide-slate-700 dark:border-slate-700">
-          {skills.length === 0 && <li className="p-2 text-sm text-slate-500">まだスキルがありません。</li>}
+        {/* ゲームの画面と同じように、スキルを2列に並べる */}
+        {skills.length === 0 && <p className="p-2 text-sm text-slate-500">まだスキルがありません。</p>}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSkillDragEnd}>
+        <SortableContext items={skills.map((s) => s.uid!)} strategy={rectSortingStrategy}>
+        <ul className="grid gap-2 md:grid-cols-2">
           {skills.map((s, i) => {
             const m = s.skillId ? masterById.get(s.skillId) : undefined;
             const r = s.review;
-            const rowColor =
-              r?.status === "check" ? "bg-amber-50 dark:bg-amber-950" : r?.status === "unknown" || !m ? "bg-orange-50 dark:bg-orange-950" : "";
+            const tone =
+              r?.status === "check"
+                ? "border-amber-400 bg-amber-50 dark:bg-amber-950"
+                : r?.status === "unknown" || !m
+                  ? "border-orange-400 bg-orange-50 dark:bg-orange-950"
+                  : s.type === "rare" || s.type === "evolved"
+                    ? "border-amber-300 bg-gradient-to-r from-amber-100 to-amber-50 dark:from-amber-900 dark:to-slate-800"
+                    : s.type === "unique"
+                      ? "border-fuchsia-300 bg-gradient-to-r from-fuchsia-100 via-sky-100 to-amber-100 dark:from-fuchsia-950 dark:via-slate-800 dark:to-slate-800"
+                      : "border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-800";
             return (
-              <li key={(s.skillId ?? s.name) + i} className={`px-2 py-1 ${rowColor}`}>
+              <SortableItem key={s.uid} id={s.uid!} className={`rounded-lg border px-2 py-1.5 shadow-sm ${tone}`}>
+                {(handle) => (
+                <>
                 <div className="flex items-center gap-2">
-                  <span className="w-10 shrink-0 text-center text-xs text-slate-500">{s.type ? SKILL_TYPE_LABEL[s.type] : ""}</span>
-                  <SkillIcon iconId={m?.iconId} />
-                  <span className="flex-1">
+                  {handle}
+                  <SkillIcon iconId={m?.iconId} size={24} />
+                  <span className="min-w-0 flex-1 font-bold">
                     {s.name}
                     {r?.status === "check" && (
-                      <span className="ml-2 rounded bg-amber-200 px-1 text-xs text-amber-900 dark:bg-amber-800 dark:text-amber-50">要確認</span>
+                      <span className="ml-2 rounded bg-amber-200 px-1 text-xs font-normal text-amber-900 dark:bg-amber-800 dark:text-amber-50">要確認</span>
                     )}
                     {!m && (
-                      <span className="ml-2 rounded bg-orange-200 px-1 text-xs text-orange-900 dark:bg-orange-800 dark:text-orange-50">
+                      <span className="ml-2 rounded bg-orange-200 px-1 text-xs font-normal text-orange-900 dark:bg-orange-800 dark:text-orange-50">
                         新しいスキルかもしれません
                       </span>
                     )}
                   </span>
                   {s.type === "unique" && (
-                    <label className="flex items-center gap-1 text-sm">
+                    <label className="flex items-center gap-1 text-xs">
                       Lv
-                      <select className={inputClass} value={s.level ?? 1} onChange={(e) => setSkill(i, { level: Number(e.target.value) })}>
+                      <select className={`${inputClass} py-0`} value={s.level ?? 1} onChange={(e) => setSkill(i, { level: Number(e.target.value) })}>
                         {[1, 2, 3, 4, 5, 6].map((n) => (
                           <option key={n}>{n}</option>
                         ))}
                       </select>
                     </label>
                   )}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
+                  <span className="text-slate-500">{s.type ? SKILL_TYPE_LABEL[s.type] : ""}</span>
+                  <div className="flex-1" />
                   {r && r.status !== "ok" && m && (
-                    <Button variant="ghost" className="px-2 py-0.5 text-emerald-700" onClick={() => setSkill(i, { review: { ...r, status: "ok", reason: undefined } })}>
-                      これで合っている
+                    <Button variant="ghost" className="px-1.5 py-0 text-xs text-emerald-700" onClick={() => setSkill(i, { review: { ...r, status: "ok", reason: undefined } })}>
+                      合っている
                     </Button>
                   )}
-                  <Button variant="ghost" className="px-2 py-0.5" onClick={() => moveSkill(i, -1)} aria-label="上へ">
-                    ↑
+                  <Button variant="ghost" className="px-1.5 py-0 text-xs" onClick={() => setFixing(fixing === i ? null : i)}>
+                    直す
                   </Button>
-                  <Button variant="ghost" className="px-2 py-0.5" onClick={() => moveSkill(i, 1)} aria-label="下へ">
-                    ↓
-                  </Button>
-                  <Button variant="ghost" className="px-2 py-0.5 text-rose-600" onClick={() => setSkills(skills.filter((_, k) => k !== i))}>
+                  <Button variant="ghost" className="px-1.5 py-0 text-xs text-rose-600" onClick={() => setSkills(skills.filter((_, k) => k !== i))}>
                     外す
                   </Button>
                 </div>
+                {fixing === i && (
+                  <div className="mt-1">
+                    <SkillInput
+                      placeholder="正しいスキル名を入れて Enter(ひらがなでも探せます)"
+                      onPick={({ name, skill }) => {
+                        setFixing(null);
+                        if (skill) chooseSkill(i, skill);
+                        else setSkill(i, { name, skillId: undefined, type: undefined, review: r ? { ...r, status: "unknown" } : undefined });
+                      }}
+                    />
+                  </div>
+                )}
                 {r && r.status !== "ok" && (
-                  <div className="ml-12 space-y-1 pb-1 text-xs">
+                  <div className="mt-1 space-y-1 text-xs">
                     <div className="text-slate-600 dark:text-slate-300">
                       読み取った文字:「{r.ocrText}」{r.reason && `(${r.reason})`}
                     </div>
@@ -431,10 +496,14 @@ export function UmaEditor({
                     )}
                   </div>
                 )}
-              </li>
+                </>
+                )}
+              </SortableItem>
             );
           })}
         </ul>
+        </SortableContext>
+        </DndContext>
       </section>
 
       <section className="space-y-2">

@@ -1,3 +1,5 @@
+#[cfg(windows)]
+pub mod capture;
 mod datafiles;
 mod files;
 mod net;
@@ -65,6 +67,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .manage(capture::CaptureState::default())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_sql::Builder::default()
@@ -80,7 +84,12 @@ pub fn run() {
             screenshot::analyze_screenshot,
             files::read_image_file,
             files::list_images_in_folder,
-            files::skill_icon
+            files::skill_icon,
+            capture::capture_find_windows,
+            capture::capture_thumbnail,
+            capture::capture_pick,
+            capture::capture_start,
+            capture::capture_stop
         ])
         .run(tauri::generate_context!())
         .expect("アプリの起動に失敗しました");

@@ -9,6 +9,8 @@ export type AppInfo = {
 export type DefaultConfig = {
   update: { releasesPageUrl: string };
   skillMaster: { distributionUrl?: string };
+  gameWindow: { candidates: { label?: string; title: string; className: string }[] };
+  capture: { framesPerSecond: number; autoStopSeconds: number; hotkey: string };
   [key: string]: unknown;
 };
 

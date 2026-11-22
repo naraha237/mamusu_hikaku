@@ -8,13 +8,27 @@ const SYMBOLS: Record<string, "double" | "single" | "cross"> = { "◎": "double"
 const SYMBOL_CHAR: Record<"double" | "single" | "cross", string> = { double: "◎", single: "○", cross: "×" };
 
 /** 形が似ていて読み違えやすい文字を、同じ文字にそろえる(漢字→カタカナ など) */
-const LOOKALIKE: Record<string, string> = { 力: "カ", 口: "ロ", 工: "エ", 夕: "タ", 二: "ニ", 八: "ハ", 卜: "ト", 一: "ー", 了: "ア" };
+const LOOKALIKE: Record<string, string> = {
+  力: "カ",
+  口: "ロ",
+  工: "エ",
+  夕: "タ",
+  二: "ニ",
+  八: "ハ",
+  卜: "ト",
+  一: "ー",
+  了: "ア",
+  // 季節のスキル(春夏秋冬ウマ娘)で、実際に読み違えた字
+  各: "冬",
+  呑: "春",
+  漱: "秋",
+};
 
 /** 照らし合わせ用に文字をそろえる(記号・空白・句読点を除き、カタカナ・半角にそろえる) */
 export function normalizeForMatch(s: string): string {
   return toKatakana(s.normalize("NFKC"))
     .toLowerCase()
-    .replace(/[力口工夕二八卜一了]/g, (c) => LOOKALIKE[c])
+    .replace(/[力口工夕二八卜一了各呑漱]/g, (c) => LOOKALIKE[c])
     .replace(/[\s、。,.!！?？・･「」『』"“”'’ー―\-~〜…:：;；/／]/g, "")
     .replace(/[◎○〇×]/g, "");
 }
@@ -89,6 +103,8 @@ export type SkillMatch = {
   symbolSure: boolean;
   /** 次に近いスキル(要確認のときに選び直せるように) */
   nearby: MasterSkill[];
+  /** 近い順の候補(ほかの行と同じスキルになってしまったときに、次の候補を選ぶため) */
+  ranked: { skill: MasterSkill; score: number }[];
 };
 
 /**
@@ -98,7 +114,7 @@ export type SkillMatch = {
  */
 export function matchSkill(text: string, glyph: EndGlyph, master: MasterSkill[], hasLevel: boolean): SkillMatch {
   const q = normalizeForMatch(text);
-  const empty: SkillMatch = { score: 0, symbolVariants: [], symbolSure: false, nearby: [] };
+  const empty: SkillMatch = { score: 0, symbolVariants: [], symbolSure: false, nearby: [], ranked: [] };
   if (!q) return empty;
 
   const scored: { it: Indexed; sc: number }[] = [];
@@ -144,7 +160,13 @@ export function matchSkill(text: string, glyph: EndGlyph, master: MasterSkill[],
     const inherited = cands.find((c) => c.skill.nameJa === pick.skill.nameJa && c.skill.type === "inherited");
     if (inherited) pick = inherited;
   }
-  return { skill: pick.skill, score: bestScore, symbolVariants: symbolVariants.length > 1 ? symbolVariants : [], symbolSure, nearby };
+  // 近い順の候補(Lv の有無に合う種類だけ。継承と固有は同じ名前なので種類で分ける)
+  const fits = (s: MasterSkill) => (hasLevel ? s.type === "unique" : s.type !== "unique");
+  const ranked = scored
+    .filter((x) => fits(x.it.skill) && x.sc >= MATCH_HINT)
+    .slice(0, 12)
+    .map((x) => ({ skill: x.it.skill, score: x.sc }));
+  return { skill: pick.skill, score: bestScore, symbolVariants: symbolVariants.length > 1 ? symbolVariants : [], symbolSure, nearby, ranked };
 }
 
 export const symbolChar = (s: "double" | "single" | "cross") => SYMBOL_CHAR[s];

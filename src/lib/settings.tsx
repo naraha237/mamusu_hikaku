@@ -12,6 +12,14 @@ export type UiSettings = {
   heatmap: boolean;
   /** 比べる人全員がこの評価以下の適性の行を隠す("none" なら隠さない) */
   hideAptitudeAtOrBelow: "none" | "G" | "F" | "E" | "D";
+  /** 「このウィンドウで合っています」と答えたゲームのウィンドウ(次からは確認しない) */
+  rememberedWindow?: { title: string; className: string };
+  /** 初めての取り込みのときの説明を見たか */
+  captureIntroShown?: boolean;
+  /** 取り込みの開始・停止のキー(空なら設定ファイルの既定) */
+  captureHotkey?: string;
+  /** ゲームのウィンドウを探す条件(空なら設定ファイルの既定) */
+  windowCandidates?: { title: string; className: string }[];
 };
 
 const DEFAULTS: UiSettings = { theme: "system", fontSize: "normal", heatmap: true, hideAptitudeAtOrBelow: "none" };

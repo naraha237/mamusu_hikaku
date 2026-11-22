@@ -5,6 +5,7 @@ import type { MasterSkill } from "../lib/skills/types";
 import { GAMETORA_SOURCE, WIKI_SOURCE } from "../lib/skills/constants";
 import { ExternalLink } from "../components/ExternalLink";
 import { UserSkillsSection } from "../components/UserSkillsSection";
+import { AdvancedSettings } from "../components/AdvancedSettings";
 import { useSettings, type FontSize, type Theme, type UiSettings } from "../lib/settings";
 
 const ORIGIN_LABEL: Record<MasterOrigin, string> = {
@@ -189,6 +190,8 @@ export function SettingsPage() {
       </section>
 
       <UserSkillsSection />
+
+      <AdvancedSettings />
     </div>
   );
 }

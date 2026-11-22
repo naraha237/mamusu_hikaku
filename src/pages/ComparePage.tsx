@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GameStyleCompare } from "../components/compare/GameStyleCompare";
 import { SkillDiffTwo } from "../components/compare/SkillDiffTwo";
 import { SkillTable } from "../components/compare/SkillTable";
 import { StatRadar } from "../components/compare/StatRadar";
@@ -8,7 +9,7 @@ import { useSettings } from "../lib/settings";
 import { useUmas } from "../lib/uma/UmaContext";
 import { newId, umaLabel, type UmaEntry } from "../lib/uma/types";
 
-type Tab = "table" | "skills" | "two";
+type Tab = "game" | "table" | "skills" | "two";
 
 export function ComparePage({
   umas,
@@ -25,7 +26,7 @@ export function ComparePage({
 }) {
   const { settings, update } = useSettings();
   const { sets, saveSet, removeSet, umas: all } = useUmas();
-  const [tab, setTab] = useState<Tab>("table");
+  const [tab, setTab] = useState<Tab>("game");
   const [baselineId, setBaselineId] = useState<string | null>(null);
   const [setName, setSetName] = useState("");
   const [naming, setNaming] = useState(false);
@@ -92,7 +93,8 @@ export function ComparePage({
   }
 
   const tabs: { key: Tab; label: string; disabled?: boolean }[] = [
-    { key: "table", label: "ステータス・適性" },
+    { key: "game", label: "ゲーム画面風" },
+    { key: "table", label: "表で比べる" },
     { key: "skills", label: "スキル" },
     { key: "two", label: "2人のスキルの差", disabled: umas.length < 2 },
   ];
@@ -201,6 +203,8 @@ export function ComparePage({
           <StatRadar umas={umas} />
         </div>
       )}
+
+      {tab === "game" && <GameStyleCompare umas={umas} hideAtOrBelow={settings.hideAptitudeAtOrBelow} />}
 
       {tab === "skills" && <SkillTable umas={umas} />}
 

@@ -20,6 +20,7 @@ tauri-plugin-process = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-global-shortcut = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip"] }
@@ -27,15 +28,30 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg"]
 base64 = "0.22"
 
 [target.'cfg(windows)'.dependencies]
-# Windows 標準の文字認識(Windows.Media.Ocr)を使うためだけに使う
+# Windows 標準の文字認識(Windows.Media.Ocr)と、画面の取り込み(Windows Graphics Capture)に使う。
+# 使っている API の一覧は docs/capture.md にある。
 windows = { version = "0.62", features = [
   "Foundation",
   "Foundation_Collections",
   "Globalization",
+  "Graphics",
+  "Graphics_Capture",
+  "Graphics_DirectX",
+  "Graphics_DirectX_Direct3D11",
   "Graphics_Imaging",
   "Media_Ocr",
   "Security_Cryptography",
   "Storage_Streams",
+  "Win32_Foundation",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_System_WinRT",
+  "Win32_System_WinRT_Direct3D11",
+  "Win32_System_WinRT_Graphics_Capture",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
 ] }
 
 [profile.release]

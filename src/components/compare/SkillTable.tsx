@@ -72,8 +72,8 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
       </div>
 
       {/* 表の中だけをスクロールさせ、ウマ娘名の行(見出し)を上に固定する */}
-      <div className="max-h-[calc(100vh-13rem)] overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">
-        <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+      <div className="max-h-[calc(100vh-13rem)] w-fit max-w-full overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">
+        <table className="w-max border-separate border-spacing-0 text-sm">
           <thead className="sticky top-0 z-20 bg-slate-50 shadow-sm dark:bg-slate-800">
             <tr>
               <th className="sticky left-0 z-30 min-w-64 border-b border-slate-200 bg-slate-50 px-3 py-2 text-left font-normal text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -87,7 +87,7 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
                 return (
                   <th
                     key={u.id}
-                    className="min-w-28 border-b border-slate-200 bg-slate-50 px-3 py-2 text-center align-top dark:border-slate-700 dark:bg-slate-800"
+                    className="w-32 min-w-32 border-b border-slate-200 bg-slate-50 px-3 py-2 text-center align-top dark:border-slate-700 dark:bg-slate-800"
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <span className={`h-3 w-3 rounded-full ${COLUMN_COLORS[i % COLUMN_COLORS.length].dot}`} />

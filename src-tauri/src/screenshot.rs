@@ -16,8 +16,9 @@ use serde::Serialize;
 
 use crate::ocr::{self, OcrLine};
 
-/// 文字を読むときの拡大後のパネルの幅(px)。小さい画面ほど大きく拡大する
-const TARGET_PANEL_WIDTH: f32 = 1150.0;
+/// 文字を読むときの拡大後のパネルの幅(px)。小さい画面ほど大きく拡大する。
+/// 1150・1600・2000 で比べると、1600 が少しだけよかった(それ以上は元の画像の粗さで頭打ち)
+const TARGET_PANEL_WIDTH: f32 = 1600.0;
 
 /// 同時に1枚ずつ処理して、PC が重くならないようにする
 static WORK_LOCK: Mutex<()> = Mutex::new(());
@@ -296,6 +297,16 @@ fn portrait(img: &RgbaImage, panel: &Panel) -> Option<String> {
     Some(base64::engine::general_purpose::STANDARD.encode(png))
 }
 
+/// スキル欄のあたりの縮小した白黒画像(ライブキャプチャで「画面が変わったか」を比べるために使う)。
+/// 詳細画面が見つからないときは None
+pub fn skill_area_signature(img: &RgbaImage) -> Option<Vec<u8>> {
+    let panel = find_panel(img)?;
+    let r = panel.rect(img, 0.02, 0.787, 0.985, 1.553)?;
+    let crop = imageops::crop_imm(img, r.0, r.1, r.2, r.3).to_image();
+    let small = imageops::resize(&crop, 64, 96, imageops::FilterType::Triangle);
+    Some(small.pixels().map(|p| ((p[0] as u32 * 3 + p[1] as u32 * 6 + p[2] as u32) / 10) as u8).collect())
+}
+
 /// 画像のバイト列(PNG/JPEG)を調べる
 pub fn analyze_bytes(bytes: &[u8]) -> Result<Analysis, String> {
     let img = image::load_from_memory(bytes)
@@ -319,7 +330,9 @@ pub fn analyze(img: &RgbaImage) -> Result<Analysis, String> {
             portrait_png: None,
         });
     };
-    let scale = (TARGET_PANEL_WIDTH / panel.w as f32).max(1.0);
+    // 開発用:環境変数 MAMUSU_PANEL_WIDTH で拡大の目標を変えて試せる
+    let target = std::env::var("MAMUSU_PANEL_WIDTH").ok().and_then(|v| v.parse::<f32>().ok()).unwrap_or(TARGET_PANEL_WIDTH);
+    let scale = (target / panel.w as f32).max(1.0);
 
     // 名前・二つ名
     let header_lines = ocr_text(img, &panel, "header", (0.40, 0.10, 0.93, 0.225), scale)?

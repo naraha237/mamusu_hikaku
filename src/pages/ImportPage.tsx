@@ -2,11 +2,13 @@ import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LiveCapture } from "../components/LiveCapture";
 import { Button, Notice } from "../components/ui";
 import { analyzeImage, listImagesInFolder, readImageFile } from "../lib/ocr/analyze";
 import { buildDraft, type Draft } from "../lib/ocr/buildDraft";
 import type { Analysis } from "../lib/ocr/types";
 import { useSkillMaster } from "../lib/skills/SkillMasterContext";
+import { useUmaData } from "../lib/umaData/UmaDataContext";
 import { newId } from "../lib/uma/types";
 
 export type ImportedImage = {
@@ -22,8 +24,18 @@ export type ImportedImage = {
 
 const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path;
 
-export function ImportPage({ onDone }: { onDone: (draft: Draft, images: ImportedImage[]) => void }) {
+export function ImportPage({
+  onDone,
+  onManual,
+  hotkeyTick,
+}: {
+  onDone: (draft: Draft, images: { url: string; name: string }[]) => void;
+  /** 画像を使わず手で入力する */
+  onManual: () => void;
+  hotkeyTick: number;
+}) {
   const { skills } = useSkillMaster();
+  const umaData = useUmaData();
   const [images, setImages] = useState<ImportedImage[]>([]);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -157,12 +169,28 @@ export function ImportPage({ onDone }: { onDone: (draft: Draft, images: Imported
       });
       return;
     }
-    onDone(buildDraft(ok.map((r) => r.analysis!), skills), results);
+    onDone(
+      buildDraft(
+        ok.map((r) => r.analysis!),
+        skills,
+        umaData,
+      ),
+      ok.map((r) => ({ url: r.url, name: r.name })),
+    );
   };
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-6">
-      <h2 className="text-2xl font-bold">画面の画像から取り込む</h2>
+      <div className="flex items-center gap-3">
+        <h2 className="flex-1 text-2xl font-bold">画像から取り込む</h2>
+        <Button variant="ghost" onClick={onManual}>
+          画像を使わず手で入力する
+        </Button>
+      </div>
+
+      <LiveCapture hotkeyTick={hotkeyTick} onDone={onDone} />
+
+      <h3 className="pt-2 text-lg font-bold">撮った画像(スクリーンショット)から取り込む</h3>
       <p className="text-sm text-slate-600 dark:text-slate-300">
         ゲームで殿堂入りウマ娘の「ウマ娘詳細」を開き、スキル欄を少しずつスクロールしながら何枚か撮った画像を入れてください。
         <br />

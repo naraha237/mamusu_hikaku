@@ -13,9 +13,12 @@ import { isAllowedByRobots } from "../src/lib/skills/robots";
 import type { MasterSkill, SkillsFile } from "../src/lib/skills/types";
 import { parseSkillsPage } from "../src/lib/skills/wikiParser";
 import { toKatakana } from "../src/lib/text";
+import { parseCards, parseRanks } from "../src/lib/umaData/gametora";
+import type { RankStep, UmaCard, UmaDataFile } from "../src/lib/umaData/types";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const OUT = resolve(ROOT, "data/skills.json");
+const UMAS_OUT = resolve(ROOT, "data/umas.json");
 /** 最後に取得を試みた日時など(git には入れない) */
 const STATE = resolve(ROOT, "data/.sync-state.json");
 const CACHE_HOURS = 24;
@@ -72,17 +75,46 @@ async function fetchWiki(): Promise<{ skills: MasterSkill[]; lastModified?: stri
   return { skills: parseSkillsPage(await res.text()), lastModified: res.headers.get("last-modified") ?? undefined };
 }
 
-/** GameTora(目次の manifest とスキルのデータ本体) */
-async function fetchGameTora(): Promise<{ skills: MasterSkill[]; version: string }> {
+/** GameTora のデータ(目次の manifest にある版のファイル)を1つ取得する */
+async function fetchGameToraData(manifest: Record<string, string>, key: string): Promise<unknown> {
+  const version = manifest[key];
+  if (!version) fail(`GameTora の目次に ${key} が見つかりませんでした。`);
+  const res = await fetchWithRetry(`${GAMETORA_SOURCE.origin}/data/umamusume/${key}.${version}.json`);
+  if (!res.ok) fail(`GameTora の ${key} を取得できませんでした(HTTP ${res.status})。`);
+  return res.json();
+}
+
+/** GameTora(スキル・衣装・評価ランクの表) */
+async function fetchGameTora(): Promise<{ skills: MasterSkill[]; version: string; cards: UmaCard[]; ranks: RankStep[] }> {
   await checkRobots(GAMETORA_SOURCE.origin, "/data/umamusume/skills.json", GAMETORA_SOURCE.name);
   const mRes = await fetchWithRetry(GAMETORA_SOURCE.manifestUrl);
   if (!mRes.ok) fail(`GameTora の目次を取得できませんでした(HTTP ${mRes.status})。`);
   const manifest = (await mRes.json()) as Record<string, string>;
-  const version = manifest.skills;
-  if (!version) fail("GameTora の目次にスキルのデータが見つかりませんでした。");
-  const res = await fetchWithRetry(GAMETORA_SOURCE.dataUrl(version));
-  if (!res.ok) fail(`GameTora のスキルのデータを取得できませんでした(HTTP ${res.status})。`);
-  return { skills: parseGameTora(await res.json()), version };
+  const skills = parseGameTora(await fetchGameToraData(manifest, "skills"));
+  const cards = parseCards(await fetchGameToraData(manifest, "character-cards"));
+  const ranks = parseRanks(await fetchGameToraData(manifest, "db-files/single_mode_rank"));
+  return { skills, version: manifest.skills, cards, ranks };
+}
+
+/** data/umas.json(ウマ娘の名前・衣装・評価ランクの表)を書き出す。変わっていなければ書かない */
+function writeUmas(cards: UmaCard[], ranks: RankStep[], version: string) {
+  if (cards.length < 100 || ranks.length < 50) fail(`GameTora の衣装(${cards.length}件)かランク(${ranks.length}件)が少なすぎます。`);
+  const prev: UmaDataFile | null = existsSync(UMAS_OUT) ? JSON.parse(readFileSync(UMAS_OUT, "utf8")) : null;
+  if (prev && prev.cards.length > cards.length * 1.1) fail(`衣装の件数が ${prev.cards.length} 件から ${cards.length} 件に大きく減りました。`);
+  if (prev && JSON.stringify(prev.cards) === JSON.stringify(cards) && JSON.stringify(prev.ranks) === JSON.stringify(ranks)) return;
+  const file: UmaDataFile = {
+    source: GAMETORA_SOURCE.name,
+    sourceUrl: "https://gametora.com/umamusume/characters",
+    fetchedAt: new Date().toISOString(),
+    gametoraVersion: version,
+    cards,
+    ranks,
+  };
+  const { cards: c, ranks: r, ...meta } = file;
+  const head = JSON.stringify(meta, null, 2).replace(/\n}$/, "");
+  const lines = (xs: unknown[]) => xs.map((x) => "    " + JSON.stringify(x)).join(",\n");
+  writeFileSync(UMAS_OUT, `${head},\n  "cards": [\n${lines(c)}\n  ],\n  "ranks": [\n${lines(r)}\n  ]\n}\n`);
+  log(`- ${UMAS_OUT} を更新しました(衣装 ${cards.length} 件・ランク ${ranks.length} 段階)。`);
 }
 
 /** スキル名に読み(カタカナ)を付ける */
@@ -141,6 +173,8 @@ async function main() {
   if (wikiProblem) fail(`Umamusume Wiki: ${wikiProblem} skills.json は更新しませんでした。`);
   const gtProblem = checkCount(gt.skills.length, undefined);
   if (gtProblem) fail(`GameTora: ${gtProblem} skills.json は更新しませんでした。`);
+
+  writeUmas(gt.cards, gt.ranks, gt.version);
 
   const skills = mergeSources(wiki.skills, gt.skills);
   const countError = checkCount(skills.length, prev?.skills.length);

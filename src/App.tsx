@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { isTauri } from "@tauri-apps/api/core";
+import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
+import { useEffect, useState } from "react";
 import "./App.css";
+import { getDefaultConfig } from "./lib/appInfo";
 import { UpdateBanner } from "./components/UpdateBanner";
 import type { ReviewSkill } from "./lib/ocr/buildDraft";
-import { SettingsProvider } from "./lib/settings";
+import { SettingsProvider, useSettings } from "./lib/settings";
 import { SkillMasterProvider, useSkillMaster } from "./lib/skills/SkillMasterContext";
 import { makeSampleUmas } from "./lib/uma/sampleData";
 import { emptyUma, MAX_COMPARE, type UmaEntry } from "./lib/uma/types";
 import { UmaProvider, useUmas } from "./lib/uma/UmaContext";
+import { UmaDataProvider } from "./lib/umaData/UmaDataContext";
 import { AboutPage } from "./pages/AboutPage";
 import { ComparePage } from "./pages/ComparePage";
 import { ImportPage } from "./pages/ImportPage";
@@ -33,6 +37,34 @@ function Main() {
   const [editing, setEditing] = useState<Editing | null>(null);
   /** 比べる人(並び順がそのまま列の順になる) */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const { settings } = useSettings();
+  const [hotkeyTick, setHotkeyTick] = useState(0);
+
+  // 取り込みの開始・停止のキー(OS にキーを登録して受け取るだけ。ゲームにキーを送ることはない)
+  useEffect(() => {
+    if (!isTauri()) return;
+    let key: string | null = null;
+    let cancelled = false;
+    (async () => {
+      const config = await getDefaultConfig().catch(() => null);
+      key = settings.captureHotkey || config?.capture.hotkey || "Ctrl+Alt+U";
+      try {
+        await register(key, (e) => {
+          if (e.state !== "Pressed") return;
+          setEditing(null);
+          setPage("import");
+          setHotkeyTick((t) => t + 1);
+        });
+        if (cancelled) await unregister(key);
+      } catch {
+        key = null; // ほかのアプリが同じキーを使っているときなど
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (key) unregister(key).catch(() => {});
+    };
+  }, [settings.captureHotkey]);
 
   const selected = selectedIds.map((id) => umas.find((u) => u.id === id)).filter((u): u is UmaEntry => !!u);
 
@@ -96,21 +128,20 @@ function Main() {
                 selectedIds={selectedIds}
                 onToggleSelect={toggle}
                 onEdit={(u) => setEditing({ uma: u, after: "list" })}
-                onNew={() => setEditing({ uma: emptyUma(), after: "list" })}
+                onNew={() => setPage("import")}
                 onCompare={() => setPage("compare")}
                 onAddSamples={addSamples}
               />
             )}
             {page === "import" && (
               <ImportPage
+                hotkeyTick={hotkeyTick}
+                onManual={() => setEditing({ uma: emptyUma(), after: "list" })}
                 onDone={(draft, images) =>
                   setEditing({
                     uma: draft.uma,
                     skills: draft.skills,
-                    review: {
-                      fields: draft.fields,
-                      images: images.filter((i) => i.status === "done").map((i) => ({ url: i.url, name: i.name })),
-                    },
+                    review: { fields: draft.fields, images },
                     after: "list",
                   })
                 }
@@ -129,9 +160,11 @@ function App() {
   return (
     <SettingsProvider>
       <SkillMasterProvider>
-        <UmaProvider>
-          <Main />
-        </UmaProvider>
+        <UmaDataProvider>
+          <UmaProvider>
+            <Main />
+          </UmaProvider>
+        </UmaDataProvider>
       </SkillMasterProvider>
     </SettingsProvider>
   );

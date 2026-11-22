@@ -92,7 +92,6 @@ export function makeSampleUmas(master: MasterSkill[]): UmaEntry[] {
       name: s.name,
       outfit: s.outfit,
       nickname: s.nickname || undefined,
-      owner: SAMPLE_OWNER,
       rank: s.rank,
       score: s.score,
       stats: { speed: s.stats[0], stamina: s.stats[1], power: s.stats[2], guts: s.stats[3], wit: s.stats[4] },

@@ -23,7 +23,7 @@ export function TypeChip({ type }: { type?: SkillType }) {
 }
 
 /** スキル名。カーソルを合わせると説明と必要SPを出す(表のスクロールで隠れないよう、画面の上に重ねて出す) */
-export function SkillName({ name, type, master }: { name: string; type?: SkillType; master?: MasterSkill }) {
+export function SkillName({ name, type, master, compact }: { name: string; type?: SkillType; master?: MasterSkill; /** 種類の札を出さない(狭い所用) */ compact?: boolean }) {
   const [pos, setPos] = useState<{ x: number; y: number; above: boolean } | null>(null);
   const hasInfo = !!master && (!!master.description || (master.sp ?? 0) > 0);
 
@@ -39,8 +39,8 @@ export function SkillName({ name, type, master }: { name: string; type?: SkillTy
       }}
       onMouseLeave={() => setPos(null)}
     >
-      <TypeChip type={type} />
-      <SkillIcon iconId={master?.iconId} />
+      {!compact && <TypeChip type={type} />}
+      <SkillIcon iconId={master?.iconId} size={compact ? 16 : 20} />
       <span className={hasInfo ? "cursor-help underline decoration-dotted underline-offset-4" : ""}>{name}</span>
       {!master && (
         <span className="rounded bg-amber-100 px-1 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-50">

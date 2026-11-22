@@ -22,20 +22,17 @@ export function UmaListPage({
 }) {
   const { umas, loaded, error, remove } = useUmas();
   const [query, setQuery] = useState("");
-  const [owner, setOwner] = useState("");
   const [deleting, setDeleting] = useState<UmaEntry | null>(null);
   const [limitMsg, setLimitMsg] = useState(false);
 
-  const owners = useMemo(() => [...new Set(umas.map((u) => u.owner).filter(Boolean))] as string[], [umas]);
   const shown = useMemo(() => {
     const q = normalizeForSearch(query);
     return umas.filter((u) => {
-      if (owner && (u.owner ?? "") !== owner) return false;
       if (!q) return true;
-      const text = normalizeForSearch([u.name, u.outfit, u.nickname, u.owner, ...(u.tags ?? [])].filter(Boolean).join(" "));
+      const text = normalizeForSearch([u.name, u.outfit, u.nickname, ...(u.tags ?? [])].filter(Boolean).join(" "));
       return text.includes(q);
     });
-  }, [umas, query, owner]);
+  }, [umas, query]);
 
   const toggle = (id: string) => {
     if (!selectedIds.includes(id) && selectedIds.length >= MAX_COMPARE) {
@@ -53,7 +50,7 @@ export function UmaListPage({
         <span className="text-sm text-slate-500">{umas.length}人</span>
         <div className="flex-1" />
         <Button variant="primary" onClick={onNew}>
-          ＋ 新しく登録する
+          ＋ 画像から取り込む
         </Button>
       </div>
 
@@ -64,15 +61,6 @@ export function UmaListPage({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <label className="flex items-center gap-2 text-sm">
-          誰の育成か
-          <select className={inputClass} value={owner} onChange={(e) => setOwner(e.target.value)}>
-            <option value="">全員</option>
-            {owners.map((o) => (
-              <option key={o}>{o}</option>
-            ))}
-          </select>
-        </label>
         <div className="flex-1" />
         <span className="text-sm">
           比べる人:{selectedIds.length} / {MAX_COMPARE}
@@ -87,7 +75,7 @@ export function UmaListPage({
 
       {loaded && umas.length === 0 && (
         <div className="space-y-2">
-          <Notice>まだウマ娘が登録されていません。「新しく登録する」から入れてください。</Notice>
+          <Notice>まだウマ娘が登録されていません。「画像から取り込む」から入れてください。</Notice>
           <Button onClick={onAddSamples}>お試し用のウマ娘を5人入れてみる</Button>
         </div>
       )}
@@ -110,9 +98,6 @@ export function UmaListPage({
                   <span className="font-bold">{u.name}</span>
                   {u.outfit && <span className="text-sm text-slate-500">[{u.outfit}]</span>}
                   {u.nickname && <span className="text-sm">「{u.nickname}」</span>}
-                  {u.owner && (
-                    <span className="rounded bg-slate-100 px-1.5 text-xs dark:bg-slate-700">{u.owner}</span>
-                  )}
                   {(u.tags ?? []).map((t) => (
                     <span key={t} className="rounded bg-sky-100 px-1.5 text-xs text-sky-900 dark:bg-sky-900 dark:text-sky-50">
                       #{t}

@@ -15,3 +15,15 @@
 body {
   margin: 0;
 }
+
+/* 案内用の窓の、スクロールの速さの見本(1段ずつ止まりながら下がる) */
+@keyframes guide-scroll {
+  0%, 15% { transform: translateY(0); }
+  25%, 40% { transform: translateY(-22px); }
+  50%, 65% { transform: translateY(-44px); }
+  75%, 90% { transform: translateY(-66px); }
+  100% { transform: translateY(-88px); }
+}
+.guide-scroll {
+  animation: guide-scroll 4s linear infinite;
+}

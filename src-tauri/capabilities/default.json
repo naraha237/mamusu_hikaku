@@ -1,15 +1,19 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "メイン画面に許可する機能",
-  "windows": ["main"],
+  "description": "メイン画面と、取り込み中の案内用の窓に許可する機能",
+  "windows": ["main", "guide"],
   "permissions": [
     "core:default",
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-close",
     "opener:default",
     "process:allow-restart",
     "updater:default",
     "sql:default",
     "sql:allow-execute",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister"
   ]
 }
