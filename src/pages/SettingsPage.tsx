@@ -4,6 +4,7 @@ import type { MasterOrigin } from "../lib/skills/master";
 import type { MasterSkill } from "../lib/skills/types";
 import { WIKI_SOURCE } from "../lib/skills/constants";
 import { ExternalLink } from "../components/ExternalLink";
+import { useSettings, type FontSize, type Theme } from "../lib/settings";
 
 const ORIGIN_LABEL: Record<MasterOrigin, string> = {
   distribution: "インターネットから取得したもの",
@@ -50,12 +51,70 @@ function SkillList({ title, items }: { title: string; items: { skill: MasterSkil
   );
 }
 
+function Choice<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="inline-flex overflow-hidden rounded border border-slate-300 dark:border-slate-600">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          className={`px-3 py-1 text-sm ${
+            value === o.value ? "bg-sky-600 font-bold text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function DisplaySettings() {
+  const { settings, update } = useSettings();
+  return (
+    <section className="space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+      <h3 className="text-lg font-bold">画面の見た目</h3>
+      <div className="grid grid-cols-[10rem_1fr] items-center gap-y-3 text-sm">
+        <span>明るさ</span>
+        <Choice<Theme>
+          value={settings.theme}
+          onChange={(theme) => update({ theme })}
+          options={[
+            { value: "system", label: "Windows に合わせる" },
+            { value: "light", label: "明るい" },
+            { value: "dark", label: "暗い" },
+          ]}
+        />
+        <span>文字の大きさ</span>
+        <Choice<FontSize>
+          value={settings.fontSize}
+          onChange={(fontSize) => update({ fontSize })}
+          options={[
+            { value: "normal", label: "標準" },
+            { value: "large", label: "大きめ" },
+          ]}
+        />
+      </div>
+    </section>
+  );
+}
+
 export function SettingsPage() {
   const { status, skills, busy, refresh } = useSkillMaster();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <h2 className="text-2xl font-bold">設定</h2>
+
+      <DisplaySettings />
 
       <section className="space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
         <h3 className="text-lg font-bold">スキルの一覧</h3>

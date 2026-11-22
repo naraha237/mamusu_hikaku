@@ -35,3 +35,6 @@ src-tauri/target
 
 # スキル同期の作業用ファイル
 data/.sync-state.json
+
+# Claude Code の個人設定
+.claude/settings.local.json

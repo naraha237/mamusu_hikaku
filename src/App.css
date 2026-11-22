@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+/* ダークモードは html の .dark クラスで切り替える(Windows の設定への追従はアプリ側で行う) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   font-family: "Yu Gothic UI", "Meiryo UI", "Segoe UI", sans-serif;
-  color-scheme: light dark;
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
 }
 
 body {
