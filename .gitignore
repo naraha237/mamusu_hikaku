@@ -32,3 +32,6 @@ src-tauri/target
 .env.*
 *.key
 
+
+# スキル同期の作業用ファイル
+data/.sync-state.json

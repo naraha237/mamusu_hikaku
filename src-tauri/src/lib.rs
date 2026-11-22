@@ -1,3 +1,6 @@
+mod datafiles;
+mod net;
+
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -38,7 +41,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![app_info, default_config])
+        .invoke_handler(tauri::generate_handler![
+            app_info,
+            default_config,
+            net::http_get,
+            datafiles::read_data_file,
+            datafiles::write_data_file
+        ])
         .run(tauri::generate_context!())
         .expect("アプリの起動に失敗しました");
 }

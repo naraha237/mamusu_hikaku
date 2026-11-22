@@ -3,7 +3,7 @@
 『ウマ娘 プリティーダービー』PC版(DMM GAMES / Steam)の殿堂入りウマ娘を最大5人並べて、
 ステータス・適性・スキルの違いをひと目で比べる Windows 用アプリです。
 
-> いまは **段階1(ひな形と配布の仕組み)** までできています。比較の機能はこれから作ります。
+> いまは **段階2(スキル一覧の取得と配信)** までできています。比較の機能はこれから作ります。
 
 ## このアプリがしないこと
 
@@ -53,6 +53,25 @@ $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content .secrets\updater.key -Raw; npm run 
 | `update.releasesPageUrl` | 単体版で更新があったときに開くページ |
 
 自動更新の確認先(`latest.json` のURL)と公開鍵は `src-tauri/tauri.conf.json` の `plugins.updater` にあります。
+
+## スキルの一覧
+
+- 取得元:[Umamusume Wiki「Game:List of Skills」](https://umamusu.wiki/Game:List_of_Skills)(CC BY-SA)。
+  記事ページのHTMLだけを取得します(robots.txt で禁止されている `/w/` 以下や API は使いません)。
+- `data/skills.json` が配布用の一覧です。アプリにも同梱され、オフラインのときに使われます。
+- GitHub Actions(`.github/workflows/sync-skills.yml`)が毎日 日本時間 3:15 に Wiki を確認し、
+  変わっていればコミットします。**件数が1割以上減ったときは更新せずに失敗します**(GitHub からメールが届きます)。
+  そのときは Wiki のページの形が変わっていないか確かめ、`src/lib/skills/wikiParser.ts` を直してください。
+- アプリは起動時に GitHub の `data/skills.json` を取得します。取得できないときだけ Wiki から直接取得し(24時間に1回まで)、
+  それもできなければ前回の分か同梱の分を使います。
+
+手元で取得し直すとき(24時間以内でも取得するなら `-- --force` を付けます):
+
+```powershell
+npm run sync-skills
+```
+
+Actions の画面から手動で動かすこともできます:<https://github.com/naraha237/mamusu_hikaku/actions/workflows/sync-skills.yml> の「Run workflow」。
 
 ---
 

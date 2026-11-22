@@ -8,6 +8,7 @@ export type AppInfo = {
 
 export type DefaultConfig = {
   update: { releasesPageUrl: string };
+  skillMaster: { distributionUrl?: string };
   [key: string]: unknown;
 };
 

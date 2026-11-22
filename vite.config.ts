@@ -9,6 +9,9 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
 
+  // 同梱のスキル一覧(約330KB)を含むため、警告の目安を上げる
+  build: { chunkSizeWarningLimit: 1500 },
+
   // Tauri 用の設定(`tauri dev` / `tauri build` のときに使う)
   clearScreen: false,
   server: {

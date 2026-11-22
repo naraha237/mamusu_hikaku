@@ -13,9 +13,8 @@
     "hotkey": "Ctrl+Alt+U"
   },
   "skillMaster": {
-    "distributionUrl": "https://raw.githubusercontent.com/naraha237/mamusu_hikaku/main/data/skills.json",
-    "wikiUrl": "https://umamusu.wiki/Game:List_of_Skills",
-    "cacheHours": 24
+    "_comment": "スキル一覧の配信URL。空にすると、アプリが Umamusume Wiki から直接取得する(24時間に1回まで)。",
+    "distributionUrl": "https://raw.githubusercontent.com/naraha237/mamusu_hikaku/main/data/skills.json"
   },
   "update": {
     "releasesPageUrl": "https://github.com/naraha237/mamusu_hikaku/releases/latest"

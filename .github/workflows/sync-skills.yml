@@ -1,0 +1,44 @@
+# 毎日1回、Umamusume Wiki からスキル一覧を取得し、変わっていれば data/skills.json をコミットする。
+# 件数が大きく減ったとき(ページの形が変わったとき)は、更新せずに失敗させて通知を出す。
+name: スキル一覧の同期
+
+on:
+  schedule:
+    # 日本時間の深夜3時15分(UTC 18:15)
+    - cron: "15 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-skills
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Wiki から取得
+        run: npx tsx scripts/sync-skills.ts
+
+      - name: 変更があればコミット
+        run: |
+          if git diff --quiet -- data/skills.json; then
+            echo "変更なし"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/skills.json
+          git commit -m "スキル一覧を Wiki の最新の内容に更新"
+          git push
