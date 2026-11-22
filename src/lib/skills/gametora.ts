@@ -1,6 +1,6 @@
 // GameTora のスキルデータ(skills.<hash>.json)を、アプリのスキルの形に直す。
 // 同期スクリプトとアプリの両方から使う。
-import type { MasterSkill, SkillType } from "./types";
+import type { DistanceKey, MasterSkill, SkillLimits, SkillType, StyleKey, SurfaceKey } from "./types";
 
 type GtSkillCore = {
   id: number;
@@ -9,7 +9,40 @@ type GtSkillCore = {
   iconid?: number;
   name_en?: string;
   desc_en?: string;
+  /** 発動条件(例:"running_style==1&phase_random==1")。グループどうしは「または」 */
+  condition_groups?: { condition?: string }[];
 };
+
+const STYLE: Record<string, StyleKey> = { "1": "front", "2": "pace", "3": "late", "4": "end" };
+const DISTANCE: Record<string, DistanceKey> = { "1": "sprint", "2": "mile", "3": "medium", "4": "long" };
+const SURFACE: Record<string, SurfaceKey> = { "1": "turf", "2": "dirt" };
+
+/**
+ * 発動条件から、脚質・距離・バ場の決まりを取り出す。
+ * 条件は「&」が「かつ」、「@」と複数のグループが「または」。
+ * どれか1つの「または」の中に決まりがなければ、その項目はどれでも発動する。
+ */
+export function parseLimits(groups: { condition?: string }[] | undefined): SkillLimits | undefined {
+  const alternatives = (groups ?? []).flatMap((g) => String(g.condition ?? "").split("@")).filter((s) => s.trim());
+  if (!alternatives.length) return undefined;
+  const pick = <K extends string>(key: string, table: Record<string, K>): K[] | undefined => {
+    const values = new Set<K>();
+    for (const alt of alternatives) {
+      const m = [...alt.matchAll(new RegExp(`${key}==(\\d)`, "g"))];
+      if (!m.length) return undefined; // この「または」には決まりがない → どれでも発動する
+      for (const x of m) if (table[x[1]]) values.add(table[x[1]]);
+    }
+    return values.size ? [...values] : undefined;
+  };
+  const limits: SkillLimits = {
+    style: pick("running_style", STYLE),
+    distance: pick("distance_type", DISTANCE),
+    surface: pick("ground_type", SURFACE),
+  };
+  return limits.style || limits.distance || limits.surface
+    ? (Object.fromEntries(Object.entries(limits).filter(([, v]) => v)) as SkillLimits)
+    : undefined;
+}
 
 type GtSkill = GtSkillCore & {
   jpname: string;
@@ -17,6 +50,8 @@ type GtSkill = GtSkillCore & {
   enname?: string;
   /** 固有スキルを継承したときの版(ID は 9xxxxx) */
   gene_version?: GtSkillCore;
+  /** 同じ系統のスキルの ID(右回り◎ なら 右回り○・右回り×・右回りの鬼) */
+  versions?: number[];
 };
 
 /** GameTora の rarity とスキルの種類の対応 */
@@ -60,6 +95,9 @@ export function parseGameTora(data: unknown): MasterSkill[] {
       description,
       sp: raw.cost ?? 0,
       iconId: raw.iconid,
+      limits: parseLimits(raw.condition_groups),
+      // 同じ系統の中でいちばん小さい ID を系統の番号にする(マイナスの「×」は別あつかい)
+      family: raw.versions?.length && !/×$/.test(nameJa) ? String(Math.min(raw.id, ...raw.versions)) : undefined,
     });
     const g = raw.gene_version;
     if (g && typeof g.id === "number") {
@@ -71,6 +109,7 @@ export function parseGameTora(data: unknown): MasterSkill[] {
         description,
         sp: g.cost ?? 0,
         iconId: g.iconid ?? raw.iconid,
+        limits: parseLimits(g.condition_groups ?? raw.condition_groups),
       });
     }
   }

@@ -5,6 +5,7 @@ import type { MasterSkill } from "../lib/skills/types";
 import { GAMETORA_SOURCE, WIKI_SOURCE } from "../lib/skills/constants";
 import { ExternalLink } from "../components/ExternalLink";
 import { UserSkillsSection } from "../components/UserSkillsSection";
+import { DataSection } from "../components/DataSection";
 import { AdvancedSettings } from "../components/AdvancedSettings";
 import { useSettings, type FontSize, type Theme, type UiSettings } from "../lib/settings";
 
@@ -22,6 +23,9 @@ const FIELD_LABEL: Record<string, string> = {
   description: "説明",
   sp: "必要SP",
   negative: "マイナスの効果",
+  iconId: "アイコン",
+  limits: "発動の条件",
+  family: "同じ系統のスキル",
 };
 
 const fmtDate = (iso?: string) => {
@@ -126,7 +130,7 @@ function DisplaySettings() {
   );
 }
 
-export function SettingsPage() {
+export function SettingsPage({ onOpenPackage }: { onOpenPackage: (path: string) => void }) {
   const { status, skills, busy, refresh } = useSkillMaster();
 
   return (
@@ -188,6 +192,8 @@ export function SettingsPage() {
           </div>
         )}
       </section>
+
+      <DataSection onOpenPackage={onOpenPackage} />
 
       <UserSkillsSection />
 

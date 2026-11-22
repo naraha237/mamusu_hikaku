@@ -43,12 +43,14 @@ export function GradeBadge({ grade, className = "" }: { grade: Grade; className?
 export function ConfirmDialog({
   message,
   confirmLabel,
+  cancelLabel = "やめる",
   danger,
   onConfirm,
   onCancel,
 }: {
   message: ReactNode;
   confirmLabel: string;
+  cancelLabel?: string;
   danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -61,7 +63,7 @@ export function ConfirmDialog({
       >
         <div>{message}</div>
         <div className="flex justify-end gap-2">
-          <Button onClick={onCancel}>やめる</Button>
+          <Button onClick={onCancel}>{cancelLabel}</Button>
           <Button variant={danger ? "danger" : "primary"} onClick={onConfirm}>
             {confirmLabel}
           </Button>

@@ -13,7 +13,9 @@ export type SkillDiff = {
   changed: SkillChange[];
 };
 
-const FIELDS: (keyof MasterSkill)[] = ["nameJa", "nameEn", "type", "description", "sp", "negative", "iconId"];
+// limits(発動の決まり)は入れ子なので、JSON にして比べる
+const FIELDS: (keyof MasterSkill)[] = ["nameJa", "nameEn", "type", "description", "sp", "negative", "iconId", "limits", "family"];
+const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
 /** 前後のスキル一覧の差分(追加・削除・変更)を求める */
 export function diffSkills(before: MasterSkill[], after: MasterSkill[]): SkillDiff {
@@ -26,7 +28,7 @@ export function diffSkills(before: MasterSkill[], after: MasterSkill[]): SkillDi
       diff.added.push(s);
       continue;
     }
-    const fields = FIELDS.filter((f) => o[f] !== s[f]);
+    const fields = FIELDS.filter((f) => !same(o[f], s[f]));
     if (fields.length) diff.changed.push({ before: o, after: s, fields });
   }
   for (const s of before) if (!newMap.has(s.id)) diff.removed.push(s);

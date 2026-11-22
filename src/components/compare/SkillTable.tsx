@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
-import { buildSkillRows, COLUMN_COLORS, isGold, type SkillRow } from "../../lib/compare";
+import { buildSkillRows, COLUMN_COLORS, isGold, variantLabel, type SkillRow } from "../../lib/compare";
 import { useSkillMaster } from "../../lib/skills/SkillMasterContext";
 import { SKILL_TYPE_LABEL } from "../../lib/skills/search";
 import type { SkillType } from "../../lib/skills/types";
 import { normalizeForSearch } from "../../lib/text";
 import { umaLabel, type UmaEntry } from "../../lib/uma/types";
 import { inputClass } from "../ui";
+import { LimitFilterBar } from "./LimitFilterBar";
+import { EMPTY_LIMIT_FILTER, matchesLimits, type LimitFilter } from "../../lib/skills/limits";
 import { Portrait } from "../SkillIcon";
 import { SkillName, TYPE_CHIP } from "./SkillName";
 
@@ -15,6 +17,9 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
   const { skills: master } = useSkillMaster();
   const [types, setTypes] = useState<Set<SkillType>>(new Set());
   const [query, setQuery] = useState("");
+  const [limitFilter, setLimitFilter] = useState<LimitFilter>(EMPTY_LIMIT_FILTER);
+  /** group = 「1人だけ/一部/全員」に分ける、order = 分けずに上から順に並べる */
+  const [mode, setMode] = useState<"group" | "order">("group");
   const rows = useMemo(() => buildSkillRows(umas, master), [umas, master]);
   const n = umas.length;
 
@@ -22,13 +27,14 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
     const q = normalizeForSearch(query);
     return rows.filter((r) => {
       if (types.size && !(r.type && types.has(r.type))) return false;
+      if (!matchesLimits(r.master, limitFilter)) return false;
       return !q || normalizeForSearch(r.name).includes(q) || normalizeForSearch(r.master?.nameEn ?? "").includes(q);
     });
-  }, [rows, types, query]);
+  }, [rows, types, query, limitFilter]);
 
   const groups: { key: string; title: string; note?: string; rows: SkillRow[]; onlyOne?: boolean }[] =
-    n === 1
-      ? [{ key: "all", title: "スキル", rows: filtered }]
+    n === 1 || mode === "order"
+      ? [{ key: "all", title: mode === "order" ? "スキル(上から順)" : "スキル", rows: filtered }]
       : [
           { key: "only", title: "1人だけが持っているスキル", note: "その人だけの強みです", rows: filtered.filter((r) => r.count === 1), onlyOne: true },
           { key: "some", title: "一部の人が持っているスキル", rows: filtered.filter((r) => r.count > 1 && r.count < n) },
@@ -69,6 +75,26 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
             すべて表示
           </button>
         )}
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-slate-500">表示:</span>
+        <div className="inline-flex overflow-hidden rounded border border-slate-300 dark:border-slate-600">
+          {([
+            ["group", "持っている人数で分ける"],
+            ["order", "上から順に並べる"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              className={`px-3 py-0.5 ${mode === k ? "bg-sky-600 font-bold text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+              onClick={() => setMode(k)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <LimitFilterBar value={limitFilter} onChange={setLimitFilter} />
+
       </div>
 
       {/* 表の中だけをスクロールさせ、ウマ娘名の行(見出し)を上に固定する */}
@@ -163,6 +189,8 @@ function SkillGroup({
               {s ? (
                 <span aria-label="所持">
                   ●{s.level ? <span className="ml-1 text-xs">Lv{s.level}</span> : null}
+                  {/* 同じ系統で ◎・○・金 が混ざる行は、どれを持っているかを出す */}
+                  {r.mixed && <span className="ml-1 text-xs font-bold text-sky-700 dark:text-sky-300">{variantLabel(r.ownedMaster[i])}</span>}
                 </span>
               ) : (
                 <span className="text-slate-300 dark:text-slate-600" aria-label="なし">

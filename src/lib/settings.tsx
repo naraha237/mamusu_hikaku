@@ -14,6 +14,10 @@ export type UiSettings = {
   hideAptitudeAtOrBelow: "none" | "G" | "F" | "E" | "D";
   /** 「このウィンドウで合っています」と答えたゲームのウィンドウ(次からは確認しない) */
   rememberedWindow?: { title: string; className: string };
+  /** 「終わったイベント用のウマ娘を消しますか?」を聞き終えたイベント */
+  handledEndedEvents?: string[];
+  /** はじめの案内(3画面)を見たか */
+  onboardingDone?: boolean;
   /** 初めての取り込みのときの説明を見たか */
   captureIntroShown?: boolean;
   /** 取り込みの開始・停止のキー(空なら設定ファイルの既定) */
@@ -25,7 +29,7 @@ export type UiSettings = {
 const DEFAULTS: UiSettings = { theme: "system", fontSize: "normal", heatmap: true, hideAptitudeAtOrBelow: "none" };
 const FILE = "settings.json";
 
-type Ctx = { settings: UiSettings; update: (patch: Partial<UiSettings>) => void };
+type Ctx = { settings: UiSettings; update: (patch: Partial<UiSettings>) => void; /** 保存した設定を読み終えたか */ ready: boolean };
 const SettingsContext = createContext<Ctx | null>(null);
 
 function applyTheme(theme: Theme) {
@@ -35,9 +39,12 @@ function applyTheme(theme: Theme) {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<UiSettings>(DEFAULTS);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    readJson<Partial<UiSettings>>(FILE).then((s) => s && setSettings({ ...DEFAULTS, ...s }));
+    readJson<Partial<UiSettings>>(FILE)
+      .then((s) => s && setSettings({ ...DEFAULTS, ...s }))
+      .finally(() => setReady(true));
   }, []);
 
   useEffect(() => {
@@ -58,7 +65,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  return <SettingsContext.Provider value={{ settings, update }}>{children}</SettingsContext.Provider>;
+  return <SettingsContext.Provider value={{ settings, update, ready }}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings(): Ctx {

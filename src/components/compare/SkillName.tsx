@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { SKILL_TYPE_LABEL } from "../../lib/skills/search";
 import type { MasterSkill, SkillType } from "../../lib/skills/types";
 import { SkillIcon } from "../SkillIcon";
+import { limitsText } from "../../lib/skills/limits";
 
 export const TYPE_CHIP: Record<SkillType, string> = {
   unique: "bg-fuchsia-100 text-fuchsia-900 dark:bg-fuchsia-900 dark:text-fuchsia-50",
@@ -25,7 +26,7 @@ export function TypeChip({ type }: { type?: SkillType }) {
 /** スキル名。カーソルを合わせると説明と必要SPを出す(表のスクロールで隠れないよう、画面の上に重ねて出す) */
 export function SkillName({ name, type, master, compact }: { name: string; type?: SkillType; master?: MasterSkill; /** 種類の札を出さない(狭い所用) */ compact?: boolean }) {
   const [pos, setPos] = useState<{ x: number; y: number; above: boolean } | null>(null);
-  const hasInfo = !!master && (!!master.description || (master.sp ?? 0) > 0);
+  const hasInfo = !!master && (!!master.description || (master.sp ?? 0) > 0 || !!master.limits);
 
   return (
     <span
@@ -60,6 +61,7 @@ export function SkillName({ name, type, master, compact }: { name: string; type?
           >
             <span className="mb-1 block font-bold">{master.nameJa}</span>
             {master.description && <span className="block">{master.description}</span>}
+            {master.limits && <span className="mt-1 block text-sky-300">発動するのは:{limitsText(master.limits)}</span>}
             {(master.sp ?? 0) > 0 && <span className="mt-1 block text-amber-300">必要SP:{master.sp}</span>}
           </span>,
           document.body,

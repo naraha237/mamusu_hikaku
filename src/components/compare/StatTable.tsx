@@ -169,6 +169,7 @@ export function StatTable({
           <tbody>
             {section("基本情報")}
             {textRow("衣装・二つ名", (u) => u.outfit)}
+            {textRow("使う予定", (u) => u.eventTag)}
             {textRow("評価ランク", (u) => u.rank && <span className="font-bold">{u.rank}</span>)}
             {numberRow("評価点", (u) => u.score)}
 

@@ -1,5 +1,7 @@
-import { useMemo } from "react";
-import { buildSkillRows, COLUMN_COLORS, extremes, skillKey } from "../../lib/compare";
+import { useMemo, useState } from "react";
+import { EMPTY_LIMIT_FILTER, matchesLimits, type LimitFilter } from "../../lib/skills/limits";
+import { LimitFilterBar } from "./LimitFilterBar";
+import { buildSkillRows, COLUMN_COLORS, extremes, rowKeyOf, skillKey } from "../../lib/compare";
 import { useSkillMaster } from "../../lib/skills/SkillMasterContext";
 import { getAptitude, gradeValue, STAT_KEYS, STAT_LABEL, statTotal, umaLabel, type Aptitude, type UmaEntry } from "../../lib/uma/types";
 import { Portrait } from "../SkillIcon";
@@ -44,6 +46,8 @@ export function GameStyleCompare({ umas, hideAtOrBelow }: { umas: UmaEntry[]; hi
   const { skills: master } = useSkillMaster();
   const rows = useMemo(() => buildSkillRows(umas, master), [umas, master]);
   const countByKey = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
+  const masterById = useMemo(() => new Map(master.map((m) => [m.id, m])), [master]);
+  const [limitFilter, setLimitFilter] = useState<LimitFilter>(EMPTY_LIMIT_FILTER);
 
   const statEx = STAT_KEYS.map((k) => extremes(umas.map((u) => u.stats[k])));
   const totalEx = extremes(umas.map((u) => statTotal(u.stats)));
@@ -58,6 +62,7 @@ export function GameStyleCompare({ umas, hideAtOrBelow }: { umas: UmaEntry[]; hi
         <span className="text-emerald-600">▲</span>一番高い <span className="text-rose-600">▼</span>一番低い ・スキルの <b>★</b>
         は、比べている中でその人だけが持っているスキルです。
       </p>
+      <LimitFilterBar value={limitFilter} onChange={setLimitFilter} />
       <div className="flex gap-3 overflow-x-auto pb-2">
         {umas.map((u, col) => {
           const color = COLUMN_COLORS[col % COLUMN_COLORS.length];
@@ -74,6 +79,9 @@ export function GameStyleCompare({ umas, hideAtOrBelow }: { umas: UmaEntry[]; hi
                 <div className="min-w-0 flex-1">
                   {u.outfit && <div className="truncate text-xs text-slate-500">[{u.outfit}]</div>}
                   <div className="truncate font-bold">{u.name}</div>
+                  {u.eventTag && (
+                    <span className="rounded bg-rose-100 px-1 text-[10px] text-rose-900 dark:bg-rose-900 dark:text-rose-50">{u.eventTag}</span>
+                  )}
                   <div className="text-sm">
                     <b className="mr-2">{u.rank ?? "—"}</b>
                     {u.score?.toLocaleString() ?? "—"}
@@ -132,7 +140,9 @@ export function GameStyleCompare({ umas, hideAtOrBelow }: { umas: UmaEntry[]; hi
               <div className="bg-lime-500 px-3 text-center text-xs font-bold text-white">スキル({u.skills.length}個)</div>
               <ul className="grid grid-cols-2 gap-1 p-2">
                 {u.skills.map((s, i) => {
-                  const row = countByKey.get(skillKey(s));
+                  const own = s.skillId ? masterById.get(s.skillId) : undefined;
+                  const row = countByKey.get(rowKeyOf(s, masterById));
+                  if (!matchesLimits(own ?? row?.master, limitFilter)) return null;
                   const onlyMe = umas.length > 1 && row?.count === 1;
                   return (
                     <li
@@ -143,7 +153,7 @@ export function GameStyleCompare({ umas, hideAtOrBelow }: { umas: UmaEntry[]; hi
                       title={s.name}
                     >
                       {onlyMe && "★"}
-                      <SkillName compact name={row?.name ?? s.name} type={row?.type ?? s.type} master={row?.master} />
+                      <SkillName compact name={own?.nameJa ?? s.name} type={own?.type ?? s.type} master={own} />
                       {s.level ? <span className="ml-1">Lv{s.level}</span> : null}
                     </li>
                   );

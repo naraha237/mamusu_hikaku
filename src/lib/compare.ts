@@ -37,10 +37,31 @@ export type SkillRow = {
   master?: MasterSkill;
   /** 列ごとの所持状況(持っていなければ undefined) */
   owned: (UmaSkill | undefined)[];
+  /** 列ごとの、持っているスキルの一覧の情報(同じ系統で ◎ と ○ が混ざるときに使う) */
+  ownedMaster: (MasterSkill | undefined)[];
   count: number;
+  /** 同じ系統の別のスキル(右回り◎ と 右回り○ など)が混ざっている */
+  mixed: boolean;
 };
 
 export const skillKey = (s: UmaSkill) => (s.skillId ? `id:${s.skillId}` : `name:${s.name}`);
+
+/** 比べるときの行の番号。同じ系統のスキル(○・◎・金)は同じ行にまとめる */
+export const rowKeyOf = (s: UmaSkill, byId: Map<string, MasterSkill>) => {
+  const fam = s.skillId ? byId.get(s.skillId)?.family : undefined;
+  return fam ? `fam:${fam}` : skillKey(s);
+};
+
+/** 同じ系統の中での強さ(金 > ◎ > ○)。表示の順番と、代表の名前を決めるのに使う */
+const strength = (m?: MasterSkill) => (!m ? 0 : m.type === "rare" || m.type === "evolved" ? 3 : /◎$/.test(m.nameJa) ? 2 : 1);
+
+/** ◎・○・金 のような短い札(系統の中でどれを持っているか) */
+export function variantLabel(m?: MasterSkill): string {
+  if (!m) return "";
+  if (m.type === "rare" || m.type === "evolved") return "金";
+  const last = m.nameJa.slice(-1);
+  return last === "◎" || last === "○" ? last : m.nameJa;
+}
 
 /** 比較対象全員のスキルを合わせた行を作る(最初に出てきた順) */
 export function buildSkillRows(umas: UmaEntry[], master: MasterSkill[]): SkillRow[] {
@@ -48,19 +69,40 @@ export function buildSkillRows(umas: UmaEntry[], master: MasterSkill[]): SkillRo
   const rows = new Map<string, SkillRow>();
   umas.forEach((u, col) => {
     for (const s of u.skills) {
-      const key = skillKey(s);
+      const key = rowKeyOf(s, byId);
+      const m = s.skillId ? byId.get(s.skillId) : undefined;
       let row = rows.get(key);
       if (!row) {
-        const m = s.skillId ? byId.get(s.skillId) : undefined;
-        row = { key, name: m?.nameJa ?? s.name, type: m?.type ?? s.type, master: m, owned: umas.map(() => undefined), count: 0 };
+        row = {
+          key,
+          name: m?.nameJa ?? s.name,
+          type: m?.type ?? s.type,
+          master: m,
+          owned: umas.map(() => undefined),
+          ownedMaster: umas.map(() => undefined),
+          count: 0,
+          mixed: false,
+        };
         rows.set(key, row);
       }
       if (!row.owned[col]) {
         row.owned[col] = s;
+        row.ownedMaster[col] = m;
         row.count++;
       }
     }
   });
+  // 同じ系統で違うスキルが混ざっている行は、「右回り◎ / 右回り○」のように両方の名前にする
+  for (const row of rows.values()) {
+    const kinds = [...new Map(row.ownedMaster.filter((m): m is MasterSkill => !!m).map((m) => [m.id, m])).values()];
+    if (kinds.length > 1) {
+      kinds.sort((a, b) => strength(b) - strength(a));
+      row.mixed = true;
+      row.name = kinds.map((k) => k.nameJa).join(" / ");
+      row.master = kinds[0];
+      row.type = kinds[0].type;
+    }
+  }
   return [...rows.values()];
 }
 

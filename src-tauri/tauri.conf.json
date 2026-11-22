@@ -29,6 +29,14 @@
     "active": true,
     "targets": ["nsis"],
     "createUpdaterArtifacts": true,
+    "fileAssociations": [
+      {
+        "ext": ["umacmp"],
+        "name": "MamusuHikakuData",
+        "description": "ウマ娘 比較ノートのデータ",
+        "role": "Editor"
+      }
+    ],
     "publisher": "naraha237",
     "shortDescription": "ウマ娘の殿堂入りウマ娘を並べて比べるアプリ",
     "icon": [

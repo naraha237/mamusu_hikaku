@@ -154,6 +154,7 @@ export function ComparePage({
         ))}
       </div>
 
+      <div className="space-y-4">
       {tab === "table" && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -233,6 +234,8 @@ export function ComparePage({
           <SkillDiffTwo a={a} b={b} colorA={umas.indexOf(a)} colorB={umas.indexOf(b)} />
         </div>
       )}
+
+      </div>
 
       {deletingSet && (
         <ConfirmDialog

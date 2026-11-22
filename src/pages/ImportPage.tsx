@@ -99,7 +99,9 @@ export function ImportPage({
         else if (e.payload.type === "leave") setDragging(false);
         else if (e.payload.type === "drop") {
           setDragging(false);
-          addPaths(e.payload.paths);
+          // .umacmp(共有・バックアップのファイル)はアプリ全体で受け取るので、ここでは画像だけ
+          const images = e.payload.paths.filter((p) => !p.toLowerCase().endsWith(".umacmp"));
+          if (images.length) addPaths(images);
         }
       })
       .then((f) => (unlisten = f));

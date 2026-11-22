@@ -17,7 +17,16 @@ export type MasterSkill = {
   iconId?: number;
   /** 名前の読み(カタカナ)。ひらがなで探すときに使う */
   kana?: string;
+  /** 発動する脚質・距離・バ場の決まり(書いていない項目は、どれでも発動する) */
+  limits?: SkillLimits;
+  /** 同じ系統のスキル(右回り○・右回り◎・右回りの鬼 など)に共通の番号。比較で「共通」として扱う */
+  family?: string;
 };
+
+export type StyleKey = "front" | "pace" | "late" | "end";
+export type DistanceKey = "sprint" | "mile" | "medium" | "long";
+export type SurfaceKey = "turf" | "dirt";
+export type SkillLimits = { style?: StyleKey[]; distance?: DistanceKey[]; surface?: SurfaceKey[] };
 
 export type SkillSource = { name: string; url: string; license?: string; licenseUrl?: string };
 

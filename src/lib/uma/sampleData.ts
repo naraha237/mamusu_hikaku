@@ -3,7 +3,8 @@ import { findSkillByName } from "../skills/search";
 import type { MasterSkill } from "../skills/types";
 import { newId, type Aptitude, type Grade, type UmaEntry, type UmaSkill } from "./types";
 
-export const SAMPLE_OWNER = "お試し";
+/** お試し用のウマ娘に付けるタグ(ヘルプからまとめて消せるように) */
+export const SAMPLE_TAG = "サンプル";
 
 type Sample = {
   name: string;
@@ -101,7 +102,7 @@ export function makeSampleUmas(master: MasterSkill[]): UmaEntry[] {
         { kind: "blue", name: "スピード", stars: 3 },
         { kind: "red", name: "中距離", stars: 2 },
       ],
-      tags: ["サンプル"],
+      tags: [SAMPLE_TAG],
       createdAt: now,
       updatedAt: now,
     };

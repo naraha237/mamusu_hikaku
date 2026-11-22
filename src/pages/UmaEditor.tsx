@@ -4,6 +4,8 @@ import { arrayMove, rectSortingStrategy, SortableContext } from "@dnd-kit/sortab
 import { useMemo, useState, type ReactNode } from "react";
 import { SortableItem } from "../components/SortableItem";
 import { useUmaData } from "../lib/umaData/UmaDataContext";
+import { useEvents } from "../lib/events/EventsContext";
+import { ARENA, isEventTag, upcomingEvents } from "../lib/events/labels";
 import { rankFromScore } from "../lib/umaData/types";
 import { Portrait, SkillIcon } from "../components/SkillIcon";
 import { SkillInput } from "../components/SkillInput";
@@ -163,7 +165,22 @@ export function UmaEditor({
 }) {
   const { save, umas } = useUmas();
   const { skills: master } = useSkillMaster();
-  const [uma, setUma] = useState<UmaEntry>(initial);
+  const { events } = useEvents();
+  const upcoming = useMemo(() => upcomingEvents(events), [events]);
+  // 新しく登録するときは、いちばん近いイベントを最初から選んでおく
+  const [uma, setUma] = useState<UmaEntry>(() =>
+    !umas.some((u) => u.id === initial.id) && !initial.eventTag && upcoming[0] ? { ...initial, eventTag: upcoming[0].label } : initial,
+  );
+  /** 選べるイベント(これからのもの。前に選んだ終わったイベントも残す) */
+  const eventOptions = useMemo(() => {
+    const labels = upcoming.map((u) => u.label);
+    if (uma.eventTag && uma.eventTag !== ARENA && !labels.includes(uma.eventTag) && isEventTag(uma.eventTag, events)) labels.push(uma.eventTag);
+    return labels;
+  }, [upcoming, events, uma.eventTag]);
+  const [eventChoice, setEventChoice] = useState(() =>
+    !uma.eventTag ? "" : uma.eventTag === ARENA || isEventTag(uma.eventTag, events) ? uma.eventTag : "__other",
+  );
+  const [otherEvent, setOtherEvent] = useState(eventChoice === "__other" ? (uma.eventTag ?? "") : "");
   const [skills, setSkills] = useState<ReviewSkill[]>(() => (initialSkills ?? initial.skills).map((s) => ({ ...s, uid: newId() })));
   const [fields, setFields] = useState<Record<string, FieldReview>>(review?.fields ?? {});
   const [registering, setRegistering] = useState<number | null>(null);
@@ -319,6 +336,39 @@ export function UmaEditor({
               set({ score, rank: rankFromScore(score, umaData.ranks) ?? uma.rank });
             }}
           />
+        </Field>
+        <Field label="使う予定のイベント" hint="タグとして一覧や比較の画面に出ます">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className={inputClass}
+              value={eventChoice}
+              onChange={(e) => {
+                const v = e.target.value;
+                setEventChoice(v);
+                set({ eventTag: v === "__other" ? otherEvent.trim() || undefined : v || undefined });
+              }}
+            >
+              <option value="">なし</option>
+              {eventOptions.map((label) => (
+                <option key={label} value={label}>
+                  {label}
+                </option>
+              ))}
+              <option value={ARENA}>{ARENA}</option>
+              <option value="__other">その他(自由に入力)</option>
+            </select>
+            {eventChoice === "__other" && (
+              <input
+                className={`${inputClass} w-48`}
+                placeholder="例:ルームマッチ"
+                value={otherEvent}
+                onChange={(e) => {
+                  setOtherEvent(e.target.value);
+                  set({ eventTag: e.target.value.trim() || undefined });
+                }}
+              />
+            )}
+          </div>
         </Field>
         <Field label="タグ" hint="「、」か「,」で区切って複数入れられます">
           <input

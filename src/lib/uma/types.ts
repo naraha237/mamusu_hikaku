@@ -74,12 +74,16 @@ export type UmaEntry = {
   sourceImages?: string[];
   /** キャラの顔(PNG を base64 にしたもの)。取り込んだ画面から切り抜く */
   portrait?: string;
+  /** 使う予定のイベント(例:12月チャンピオンズミーティングLONG / 競技場 / 自由入力)。タグといっしょに表示する */
+  eventTag?: string;
   tags?: string[];
   createdAt: string;
   updatedAt: string;
 };
 
 export const newId = () => crypto.randomUUID();
+
+
 
 export function emptyUma(): UmaEntry {
   const now = new Date().toISOString();
@@ -108,3 +112,6 @@ export const umaLabel = (u: UmaEntry) => u.nickname || u.name || "(名前なし)
 export const MAX_COMPARE = 5;
 
 export type CompareSet = { id: string; name: string; umaIds: string[]; updatedAt: string };
+
+/** イベントのタグとふつうのタグをまとめた一覧(イベントが先) */
+export const allTags = (u: UmaEntry): string[] => [...(u.eventTag ? [u.eventTag] : []), ...(u.tags ?? [])];
