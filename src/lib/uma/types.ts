@@ -72,6 +72,8 @@ export type UmaEntry = {
   skills: UmaSkill[];
   factors?: Factor[];
   sourceImages?: string[];
+  /** キャラの顔(PNG を base64 にしたもの)。取り込んだ画面から切り抜く */
+  portrait?: string;
   tags?: string[];
   createdAt: string;
   updatedAt: string;

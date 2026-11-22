@@ -9,8 +9,8 @@ const USER_AGENT: &str = concat!(
     " (+https://github.com/naraha237/mamusu_hikaku)"
 );
 
-/// 取得してよいホスト(スキル一覧の配信元と、Umamusume Wiki だけ)
-const ALLOWED_HOSTS: &[&str] = &["raw.githubusercontent.com", "umamusu.wiki"];
+/// 取得してよいホスト(スキル一覧の配信元、Umamusume Wiki、GameTora だけ)
+const ALLOWED_HOSTS: &[&str] = &["raw.githubusercontent.com", "umamusu.wiki", "gametora.com"];
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

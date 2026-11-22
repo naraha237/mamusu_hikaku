@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Portrait } from "../components/SkillIcon";
 import { Button, ConfirmDialog, GradeBadge, inputClass, Notice } from "../components/ui";
 import { normalizeForSearch } from "../lib/text";
 import { useUmas } from "../lib/uma/UmaContext";
@@ -103,6 +104,7 @@ export function UmaListPage({
                 onChange={() => toggle(u.id)}
                 aria-label={`${u.name} を比べる`}
               />
+              <Portrait png={u.portrait} size={40} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <span className="font-bold">{u.name}</span>

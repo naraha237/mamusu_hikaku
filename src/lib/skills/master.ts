@@ -1,11 +1,12 @@
 // スキルマスタの読み込みと更新。
-// 1. 配信(GitHub の skills.json)  2. Wiki を直接取得  3. 前回取得したもの  4. アプリに同梱したもの
+// 1. 配信(GitHub の skills.json)  2. Wiki と GameTora を直接取得  3. 前回取得したもの  4. アプリに同梱したもの
 // の順に試す。オフラインでも必ず 3 か 4 で動く。
 import { invoke } from "@tauri-apps/api/core";
 import bundledJson from "../../../data/skills.json";
 import { readJson, writeJson } from "../dataFiles";
-import { checkCount, WIKI_SOURCE, USER_AGENT } from "./constants";
+import { checkCount, GAMETORA_SOURCE, WIKI_SOURCE, USER_AGENT } from "./constants";
 import { diffSkills, isEmptyDiff, type SkillDiff } from "./diff";
+import { mergeSources, parseGameTora } from "./gametora";
 import { isAllowedByRobots } from "./robots";
 import type { MasterSkill, SkillsFile } from "./types";
 import { parseSkillsPage } from "./wikiParser";
@@ -16,7 +17,7 @@ const CACHE_FILE = "skills-cache.json";
 const STATE_FILE = "skills-state.json";
 const USER_SKILLS_FILE = "user-skills.json";
 const WIKI_CACHE_HOURS = 24;
-const WIKI_RETRY_WAIT_MS = [5_000, 15_000];
+const RETRY_WAIT_MS = [5_000, 15_000];
 
 export type MasterOrigin = "distribution" | "wiki" | "cache" | "bundled";
 
@@ -83,34 +84,65 @@ async function fetchDistribution(url: string, state: State): Promise<{ file: Ski
   return { file, etag: res.etag };
 }
 
-/** Wiki から直接取得する(配信元が使えないときだけ)。変わっていなければ null */
-async function fetchWiki(current: SkillsFile): Promise<SkillsFile | null> {
-  const robots = await httpGet(`${WIKI_SOURCE.origin}/robots.txt`);
-  if (robots.status === 200 && !isAllowedByRobots(robots.body, WIKI_SOURCE.path, USER_AGENT)) {
-    throw new Error("取得元のサイトの決まりで、取得が許可されていません");
-  }
-
-  let res: HttpResult | null = null;
+/** 間隔を空けて最大2回やり直す */
+async function getWithRetry(url: string): Promise<HttpResult> {
   for (let attempt = 0; ; attempt++) {
     try {
-      res = await httpGet(WIKI_SOURCE.url, undefined, current.sourceLastModified);
-      if (res.status < 500 || attempt >= WIKI_RETRY_WAIT_MS.length) break;
+      const res = await httpGet(url);
+      if (res.status < 500 || attempt >= RETRY_WAIT_MS.length) return res;
     } catch (e) {
-      if (attempt >= WIKI_RETRY_WAIT_MS.length) throw e;
+      if (attempt >= RETRY_WAIT_MS.length) throw e;
     }
-    await sleep(WIKI_RETRY_WAIT_MS[attempt]);
+    await sleep(RETRY_WAIT_MS[attempt]);
   }
-  if (res.status === 304) return null;
-  if (res.status !== 200) throw new Error(`HTTP ${res.status}`);
+}
+
+async function robotsAllow(origin: string, path: string): Promise<boolean> {
+  const robots = await httpGet(`${origin}/robots.txt`);
+  return robots.status !== 200 || isAllowedByRobots(robots.body, path, USER_AGENT);
+}
+
+/**
+ * Wiki と GameTora から直接取得する(配信元が使えないときだけ)。
+ * 両方とも前回と同じなら null。片方だけ取れたときは、取れたほうだけで作る。
+ */
+async function fetchDirect(current: SkillsFile): Promise<SkillsFile | null> {
+  let wiki: MasterSkill[] | null = null;
+  let lastModified: string | undefined;
+  let gt: MasterSkill[] | null = null;
+  let gtVersion: string | undefined;
+
+  if (await robotsAllow(WIKI_SOURCE.origin, WIKI_SOURCE.path)) {
+    const res = await getWithRetry(WIKI_SOURCE.url).catch(() => null);
+    if (res?.status === 200) {
+      wiki = parseSkillsPage(res.body);
+      lastModified = res.lastModified;
+    }
+  }
+  if (await robotsAllow(GAMETORA_SOURCE.origin, "/data/umamusume/skills.json")) {
+    const m = await getWithRetry(GAMETORA_SOURCE.manifestUrl).catch(() => null);
+    const version = m?.status === 200 ? (JSON.parse(m.body) as Record<string, string>).skills : undefined;
+    if (version && version === current.gametoraVersion && lastModified === current.sourceLastModified) return null;
+    if (version) {
+      const res = await getWithRetry(GAMETORA_SOURCE.dataUrl(version)).catch(() => null);
+      if (res?.status === 200) {
+        gt = parseGameTora(JSON.parse(res.body));
+        gtVersion = version;
+      }
+    }
+  }
+  if (!wiki && !gt) throw new Error("どちらの取得元からも取得できませんでした");
+
+  // 読み(カナ)はアプリでは作れないので、前の一覧から引き継ぐ
+  const kanaById = new Map(current.skills.filter((s) => s.kana).map((s) => [s.id, s.kana]));
+  const skills = mergeSources(wiki, gt).map((s) => (kanaById.has(s.id) ? { ...s, kana: kanaById.get(s.id) } : s));
 
   return {
-    source: WIKI_SOURCE.id,
-    sourceUrl: WIKI_SOURCE.url,
-    license: WIKI_SOURCE.license,
-    licenseUrl: WIKI_SOURCE.licenseUrl,
+    ...current,
     fetchedAt: new Date().toISOString(),
-    sourceLastModified: res.lastModified,
-    skills: parseSkillsPage(res.body),
+    sourceLastModified: lastModified ?? current.sourceLastModified,
+    gametoraVersion: gtVersion ?? current.gametoraVersion,
+    skills,
   };
 }
 
@@ -155,7 +187,7 @@ export async function refreshMaster(distributionUrl: string | undefined, force =
     if (!recent || force) {
       try {
         state.wikiCheckedAt = now;
-        const file = await fetchWiki(local.file);
+        const file = await fetchDirect(local.file);
         if (file === null) unchanged = true;
         else accept(file, "wiki");
       } catch {

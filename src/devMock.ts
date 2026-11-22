@@ -32,6 +32,13 @@ export function installDevMock() {
         return null;
       case "http_get":
         throw new Error("開発用のブラウザでは通信しません");
+      case "analyze_screenshot":
+        // 開発用:Vite の開発サーバー経由で Rust の試験用プログラムに読み取らせる
+        return fetch("/__dev/analyze", { method: "POST", body: args as Uint8Array<ArrayBuffer> }).then((r) =>
+          r.ok ? r.json() : Promise.reject(new Error("読み取りに失敗しました")),
+        );
+      case "skill_icon":
+        return null;
       case "plugin:sql|load":
         return a.db;
       case "plugin:sql|select": {

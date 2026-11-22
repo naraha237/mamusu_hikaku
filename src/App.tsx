@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import { UpdateBanner } from "./components/UpdateBanner";
+import type { ReviewSkill } from "./lib/ocr/buildDraft";
 import { SettingsProvider } from "./lib/settings";
 import { SkillMasterProvider, useSkillMaster } from "./lib/skills/SkillMasterContext";
 import { makeSampleUmas } from "./lib/uma/sampleData";
@@ -8,24 +9,28 @@ import { emptyUma, MAX_COMPARE, type UmaEntry } from "./lib/uma/types";
 import { UmaProvider, useUmas } from "./lib/uma/UmaContext";
 import { AboutPage } from "./pages/AboutPage";
 import { ComparePage } from "./pages/ComparePage";
+import { ImportPage } from "./pages/ImportPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { UmaEditor } from "./pages/UmaEditor";
+import { UmaEditor, type EditorReview } from "./pages/UmaEditor";
 import { UmaListPage } from "./pages/UmaListPage";
 
-type Page = "compare" | "list" | "settings" | "about";
+type Page = "compare" | "list" | "import" | "settings" | "about";
 
 const NAV: { page: Page; label: string }[] = [
   { page: "compare", label: "くらべる" },
   { page: "list", label: "ウマ娘一覧" },
+  { page: "import", label: "画像から取り込む" },
   { page: "settings", label: "設定" },
   { page: "about", label: "このアプリについて" },
 ];
+
+type Editing = { uma: UmaEntry; skills?: ReviewSkill[]; review?: EditorReview; after: Page };
 
 function Main() {
   const { umas, save } = useUmas();
   const { skills } = useSkillMaster();
   const [page, setPage] = useState<Page>("compare");
-  const [editing, setEditing] = useState<UmaEntry | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
   /** 比べる人(並び順がそのまま列の順になる) */
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -46,7 +51,7 @@ function Main() {
       <UpdateBanner />
       <header className="flex items-center gap-4 border-b border-slate-200 px-4 py-2 dark:border-slate-700">
         <h1 className="text-lg font-bold">ウマ娘 比較ノート</h1>
-        <nav className="flex gap-1">
+        <nav className="flex flex-wrap gap-1">
           {NAV.map((n) => (
             <button
               key={n.page}
@@ -65,7 +70,16 @@ function Main() {
       </header>
       <main className="min-w-0 flex-1">
         {editing ? (
-          <UmaEditor key={editing.id} initial={editing} onDone={() => setEditing(null)} />
+          <UmaEditor
+            key={editing.uma.id}
+            initial={editing.uma}
+            initialSkills={editing.skills}
+            review={editing.review}
+            onDone={() => {
+              setPage(editing.after);
+              setEditing(null);
+            }}
+          />
         ) : (
           <>
             {page === "compare" && (
@@ -81,10 +95,25 @@ function Main() {
               <UmaListPage
                 selectedIds={selectedIds}
                 onToggleSelect={toggle}
-                onEdit={(u) => setEditing(u)}
-                onNew={() => setEditing(emptyUma())}
+                onEdit={(u) => setEditing({ uma: u, after: "list" })}
+                onNew={() => setEditing({ uma: emptyUma(), after: "list" })}
                 onCompare={() => setPage("compare")}
                 onAddSamples={addSamples}
+              />
+            )}
+            {page === "import" && (
+              <ImportPage
+                onDone={(draft, images) =>
+                  setEditing({
+                    uma: draft.uma,
+                    skills: draft.skills,
+                    review: {
+                      fields: draft.fields,
+                      images: images.filter((i) => i.status === "done").map((i) => ({ url: i.url, name: i.name })),
+                    },
+                    after: "list",
+                  })
+                }
               />
             )}
             {page === "settings" && <SettingsPage />}

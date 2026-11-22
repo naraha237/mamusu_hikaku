@@ -16,6 +16,7 @@ import {
 } from "../../lib/uma/types";
 import { useSkillMaster } from "../../lib/skills/SkillMasterContext";
 import { GradeBadge } from "../ui";
+import { Portrait } from "../SkillIcon";
 
 const stickyHead =
   "sticky left-0 z-10 bg-slate-50 dark:bg-slate-800 text-left font-normal text-slate-600 dark:text-slate-300 whitespace-nowrap";
@@ -50,6 +51,7 @@ function SortableHeader({ uma, index, children }: { uma: UmaEntry; index: number
           ⠿
         </span>
         <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${COLUMN_COLORS[index % COLUMN_COLORS.length].dot}`} />
+        <Portrait png={uma.portrait} size={36} />
         <div className="min-w-0">{children}</div>
       </div>
     </th>

@@ -9,10 +9,17 @@ export const WIKI_SOURCE = {
   licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
 } as const;
 
-/** 補助の確認先(自動取得はしない) */
+/** もう1つの取得元(進化スキル・日本語の説明・アイコン番号など) */
 export const GAMETORA_SOURCE = {
   name: "GameTora",
   url: "https://gametora.com/umamusume/skills",
+  origin: "https://gametora.com",
+  manifestUrl: "https://gametora.com/data/manifests/umamusume.json",
+  /** スキルのデータ本体(<hash> は manifest の値) */
+  dataUrl: (hash: string) => `https://gametora.com/data/umamusume/skills.${hash}.json`,
+  /** スキルのアイコン画像 */
+  iconUrl: (iconId: number) => `https://gametora.com/images/umamusume/skill_icons/utx_ico_skill_${iconId}.png`,
+  skillPageUrl: (id: string) => `https://gametora.com/umamusume/skills/${id}`,
 } as const;
 
 /** 取得のときに名乗る User-Agent(アプリ名と連絡先) */

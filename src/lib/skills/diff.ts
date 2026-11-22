@@ -13,7 +13,7 @@ export type SkillDiff = {
   changed: SkillChange[];
 };
 
-const FIELDS: (keyof MasterSkill)[] = ["nameJa", "nameEn", "type", "description", "sp", "negative"];
+const FIELDS: (keyof MasterSkill)[] = ["nameJa", "nameEn", "type", "description", "sp", "negative", "iconId"];
 
 /** 前後のスキル一覧の差分(追加・削除・変更)を求める */
 export function diffSkills(before: MasterSkill[], after: MasterSkill[]): SkillDiff {

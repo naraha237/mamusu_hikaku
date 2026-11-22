@@ -1,5 +1,8 @@
 mod datafiles;
+mod files;
 mod net;
+pub mod ocr;
+pub mod screenshot;
 
 use serde::Serialize;
 
@@ -61,6 +64,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_sql::Builder::default()
@@ -72,7 +76,11 @@ pub fn run() {
             default_config,
             net::http_get,
             datafiles::read_data_file,
-            datafiles::write_data_file
+            datafiles::write_data_file,
+            screenshot::analyze_screenshot,
+            files::read_image_file,
+            files::list_images_in_folder,
+            files::skill_icon
         ])
         .run(tauri::generate_context!())
         .expect("アプリの起動に失敗しました");

@@ -3,6 +3,7 @@ import { useSkillMaster } from "../lib/skills/SkillMasterContext";
 import { searchSkills, SKILL_TYPE_LABEL } from "../lib/skills/search";
 import type { MasterSkill } from "../lib/skills/types";
 import { inputClass } from "./ui";
+import { SkillIcon } from "./SkillIcon";
 
 /** スキル名の入力欄(候補つき)。決定すると onPick が呼ばれる */
 export function SkillInput({
@@ -75,6 +76,7 @@ export function SkillInput({
               <span className="w-10 shrink-0 text-center text-xs text-slate-500 dark:text-slate-400">
                 {SKILL_TYPE_LABEL[s.type]}
               </span>
+              <SkillIcon iconId={s.iconId} />
               <span>{s.nameJa}</span>
               {s.nameEn && <span className="truncate text-xs text-slate-400">{s.nameEn}</span>}
             </li>

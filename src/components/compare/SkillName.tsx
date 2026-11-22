@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { SKILL_TYPE_LABEL } from "../../lib/skills/search";
 import type { MasterSkill, SkillType } from "../../lib/skills/types";
+import { SkillIcon } from "../SkillIcon";
 
 export const TYPE_CHIP: Record<SkillType, string> = {
   unique: "bg-fuchsia-100 text-fuchsia-900 dark:bg-fuchsia-900 dark:text-fuchsia-50",
@@ -39,6 +40,7 @@ export function SkillName({ name, type, master }: { name: string; type?: SkillTy
       onMouseLeave={() => setPos(null)}
     >
       <TypeChip type={type} />
+      <SkillIcon iconId={master?.iconId} />
       <span className={hasInfo ? "cursor-help underline decoration-dotted underline-offset-4" : ""}>{name}</span>
       {!master && (
         <span className="rounded bg-amber-100 px-1 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-50">

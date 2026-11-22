@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useSkillMaster } from "../lib/skills/SkillMasterContext";
 import type { MasterOrigin } from "../lib/skills/master";
 import type { MasterSkill } from "../lib/skills/types";
-import { WIKI_SOURCE } from "../lib/skills/constants";
+import { GAMETORA_SOURCE, WIKI_SOURCE } from "../lib/skills/constants";
 import { ExternalLink } from "../components/ExternalLink";
+import { UserSkillsSection } from "../components/UserSkillsSection";
 import { useSettings, type FontSize, type Theme, type UiSettings } from "../lib/settings";
 
 const ORIGIN_LABEL: Record<MasterOrigin, string> = {
   distribution: "インターネットから取得したもの",
-  wiki: "Umamusume Wiki から直接取得したもの",
+  wiki: "取得元のサイトから直接取得したもの",
   cache: "前回取得したもの",
   bundled: "アプリに最初から入っているもの",
 };
@@ -147,7 +148,8 @@ export function SettingsPage() {
             </dd>
             <dt className="text-slate-500 dark:text-slate-400">取得元</dt>
             <dd>
-              <ExternalLink href={WIKI_SOURCE.url}>{WIKI_SOURCE.name}</ExternalLink>({ORIGIN_LABEL[status.origin]})
+              <ExternalLink href={WIKI_SOURCE.url}>{WIKI_SOURCE.name}</ExternalLink>・
+              <ExternalLink href={GAMETORA_SOURCE.url}>{GAMETORA_SOURCE.name}</ExternalLink>({ORIGIN_LABEL[status.origin]})
             </dd>
             <dt className="text-slate-500 dark:text-slate-400">最後に確認した日時</dt>
             <dd>{fmtDate(status.lastCheckedAt)}</dd>
@@ -185,6 +187,8 @@ export function SettingsPage() {
           </div>
         )}
       </section>
+
+      <UserSkillsSection />
     </div>
   );
 }

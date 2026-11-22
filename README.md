@@ -3,7 +3,7 @@
 『ウマ娘 プリティーダービー』PC版(DMM GAMES / Steam)の殿堂入りウマ娘を最大5人並べて、
 ステータス・適性・スキルの違いをひと目で比べる Windows 用アプリです。
 
-> いまは **段階3(手入力・比較表示・可視化・スキル差分)** までできています。画面からの読み取り(OCR)はこれから作ります。
+> いまは **段階4(スクショの読み込みと読み取り、確認・修正画面)** までできています。ライブキャプチャはこれから作ります。
 
 ## 使い方(いまできること)
 
@@ -13,7 +13,22 @@
 3. 「ステータス・適性」「スキル」「2人のスキルの差」のタブで比べます。
    列の見出しの ⠿ をドラッグすると並べ替えられ、「この組み合わせを保存」で組み合わせを残せます。
 
+### スクリーンショットから取り込む
+
+1. ゲームで殿堂入りウマ娘の「ウマ娘詳細」を開き、スキル欄を少しずつスクロールしながら何枚か撮ります
+   (Steam の F12、または Win+Shift+S)。
+2. 「画像から取り込む」に、画像をドラッグ&ドロップ/「画像を選ぶ」/Ctrl+V で貼り付け/フォルダをまとめて読み込み します。
+3. 「読み取って確認する」を押すと、名前・評価点・ステータス・適性・スキル・顔の画像を読み取ります。
+4. 確認画面で黄色(要確認)の項目を、左の画像と見比べて直し、「保存する」を押します。
+   - ◎・○ の記号は小さい画面だと読めないことがあります。候補のボタンで選び直せます。
+   - 一覧にないスキルは「自分のスキルとして登録」できます(設定画面で編集・削除も可能)。
+   - 評価ランク(UG など)は絵なので読み取れません。手で入れてください。
+
+ゲームの窓が大きいほど正しく読み取れます(全画面だとほぼそのまま使えます)。
+読み取りは PC の中(Windows 標準の文字認識)で行い、画像を外に送ることはありません。
+
 データは `%APPDATA%\com.naraha237.mamusuhikaku\mamusu.db`(SQLite)に保存されます。
+スキルのアイコンは GameTora から取得して、同じフォルダの `icons\` に保存します。
 
 ## このアプリがしないこと
 
@@ -52,6 +67,19 @@ npm run dev
 ```
 
 その後、ブラウザで <http://localhost:1420> を開きます。
+画像の読み取りを試すときは、先に試験用の読み取りプログラムを作っておきます(開発サーバーがこれを呼びます)。
+
+```powershell
+cargo build --release --manifest-path src-tauri\Cargo.toml --example analyze
+```
+
+読み取りだけをコマンドで試す(`MAMUSU_DEBUG_DIR` を指定すると、切り出した画像も保存されます):
+
+```powershell
+.\src-tauri\target\release\examples\analyze.exe samples\fullsc1.jpg
+```
+
+`samples\` に置いたゲームの画像は、git に入りません。
 
 インストーラーを手元で作るとき(`src-tauri\target\release\bundle\nsis\` にできます):
 
@@ -74,8 +102,12 @@ $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content .secrets\updater.key -Raw; npm run 
 
 ## スキルの一覧
 
-- 取得元:[Umamusume Wiki「Game:List of Skills」](https://umamusu.wiki/Game:List_of_Skills)(CC BY-SA)。
-  記事ページのHTMLだけを取得します(robots.txt で禁止されている `/w/` 以下や API は使いません)。
+- 取得元:
+  - [Umamusume Wiki「Game:List of Skills」](https://umamusu.wiki/Game:List_of_Skills)(CC BY-SA)。
+    記事ページのHTMLだけを取得します(robots.txt で禁止されている `/w/` 以下や API は使いません)。
+  - [GameTora](https://gametora.com/umamusume/skills)。スキルのデータ(`/data/umamusume/skills.<版>.json`)から
+    日本語の説明・進化スキル・アイコン番号を取り、名前の読み(ひらがな検索用)は kuromoji で付けます。
+- 同じスキル ID なら GameTora の内容を優先し、英語名などを Wiki でおぎないます。
 - `data/skills.json` が配布用の一覧です。アプリにも同梱され、オフラインのときに使われます。
 - GitHub Actions(`.github/workflows/sync-skills.yml`)が毎日 日本時間 3:15 に Wiki を確認し、
   変わっていればコミットします。**件数が1割以上減ったときは更新せずに失敗します**(GitHub からメールが届きます)。

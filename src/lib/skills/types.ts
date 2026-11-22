@@ -13,7 +13,13 @@ export type MasterSkill = {
   sp?: number;
   /** 下位スキルなど、マイナスの効果のスキル */
   negative?: boolean;
+  /** スキルのアイコンの番号(GameTora の iconid) */
+  iconId?: number;
+  /** 名前の読み(カタカナ)。ひらがなで探すときに使う */
+  kana?: string;
 };
+
+export type SkillSource = { name: string; url: string; license?: string; licenseUrl?: string };
 
 /** 配布する skills.json の形 */
 export type SkillsFile = {
@@ -27,5 +33,9 @@ export type SkillsFile = {
   fetchedAt: string;
   /** Wiki のページの Last-Modified(条件付き取得に使う) */
   sourceLastModified?: string;
+  /** 使った取得元(Umamusume Wiki・GameTora) */
+  sources?: SkillSource[];
+  /** GameTora のデータの版(ファイル名のハッシュ) */
+  gametoraVersion?: string;
   skills: MasterSkill[];
 };

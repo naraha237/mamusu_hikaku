@@ -6,6 +6,7 @@ import type { SkillType } from "../../lib/skills/types";
 import { normalizeForSearch } from "../../lib/text";
 import { umaLabel, type UmaEntry } from "../../lib/uma/types";
 import { inputClass } from "../ui";
+import { Portrait } from "../SkillIcon";
 import { SkillName, TYPE_CHIP } from "./SkillName";
 
 const FILTER_TYPES: SkillType[] = ["unique", "rare", "normal", "inherited", "evolved", "other"];
@@ -90,6 +91,7 @@ export function SkillTable({ umas }: { umas: UmaEntry[] }) {
                   >
                     <div className="flex items-center justify-center gap-1.5">
                       <span className={`h-3 w-3 rounded-full ${COLUMN_COLORS[i % COLUMN_COLORS.length].dot}`} />
+                      <Portrait png={u.portrait} size={28} />
                       <span className="font-bold">{umaLabel(u)}</span>
                     </div>
                     <div className="text-xs font-normal text-slate-500 dark:text-slate-400">

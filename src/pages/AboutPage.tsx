@@ -40,13 +40,13 @@ export function AboutPage() {
           </p>
         </div>
         <div>
-          <p className="font-bold">スキルの確認先</p>
+          <p className="font-bold">スキルの一覧・説明・アイコン</p>
           <p className="text-sm">
             <ExternalLink href={GAMETORA_SOURCE.url}>{GAMETORA_SOURCE.name}</ExternalLink>
             <br />
             {GAMETORA_SOURCE.url}
             <br />
-            一覧にないスキルを調べるときの案内先として使っています(データは取得していません)。
+            スキルの日本語の説明・進化スキル・アイコンの画像を取得して利用しています。
           </p>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
