@@ -1,0 +1,65 @@
+# タグ(v0.1.0 など)を push すると、インストーラー版と単体exe版を作って Releases に公開する。
+name: リリース
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: タグと package.json のバージョンが同じか確認
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          $pkg = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          if ($tag -ne $pkg) { throw "タグ($tag)と package.json のバージョン($pkg)が違います" }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - run: npm ci
+
+      - name: ビルドしてインストーラー版を公開
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "ウマ娘 比較ノート ${{ github.ref_name }}"
+          releaseBody: |
+            ## ダウンロード
+            - **MamusuHikaku_(バージョン)_x64-setup.exe** … インストーラー版(おすすめ。自動で更新できます)
+            - **MamusuHikaku_(バージョン)_portable.exe** … 単体版(インストール不要。ダブルクリックで起動)
+
+            初めて開くときに「Windows によって PC が保護されました」と出たら、「詳細情報」→「実行」を押してください。
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: true
+
+      - name: 単体exe版を公開
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart("v")
+          $name = "MamusuHikaku_${ver}_portable.exe"
+          Copy-Item src-tauri/target/release/MamusuHikaku.exe $name
+          gh release upload "${{ github.ref_name }}" $name --clobber

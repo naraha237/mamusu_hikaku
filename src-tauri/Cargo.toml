@@ -1,0 +1,29 @@
+[package]
+name = "mamusu_hikaku"
+version = "0.1.0"
+description = "ウマ娘 比較ノート"
+authors = ["naraha237"]
+edition = "2024"
+
+[lib]
+# Windows でバイナリ名とぶつからないよう、ライブラリ名に _lib を付ける
+name = "mamusu_hikaku_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

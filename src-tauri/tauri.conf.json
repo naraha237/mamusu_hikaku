@@ -1,0 +1,63 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MamusuHikaku",
+  "mainBinaryName": "MamusuHikaku",
+  "version": "../package.json",
+  "identifier": "com.naraha237.mamusuhikaku",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "ウマ娘 比較ノート",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 560
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
+    "publisher": "naraha237",
+    "shortDescription": "ウマ娘の殿堂入りウマ娘を並べて比べるアプリ",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Japanese"],
+        "displayLanguageSelector": false
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVCRDU0QzIxQkM2MzY2NTMKUldSVFptTzhJVXpWV3lYSXYydWx5cytLYldMSWp1OEpTc0IwUysyYmxBUmRDK0JZRjFJNE1rZWcK",
+      "endpoints": [
+        "https://github.com/naraha237/mamusu_hikaku/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

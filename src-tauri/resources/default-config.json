@@ -1,0 +1,23 @@
+{
+  "_comment": "アプリの既定の設定。ユーザーが変えた値はデータフォルダの settings.json に保存し、こちらは書き換えない。",
+  "gameWindow": {
+    "_comment": "ゲームのウィンドウを探すための条件。タイトル(大文字・小文字を区別しない部分一致)とクラス名だけで判定する。",
+    "candidates": [
+      { "label": "Steam版", "title": "UmamusumePrettyDerby_Jpn", "className": "UnityWndClass" },
+      { "label": "DMM版(未確認)", "title": "umamusume", "className": "UnityWndClass" }
+    ]
+  },
+  "capture": {
+    "framesPerSecond": 3,
+    "autoStopSeconds": 5,
+    "hotkey": "Ctrl+Alt+U"
+  },
+  "skillMaster": {
+    "distributionUrl": "https://raw.githubusercontent.com/naraha237/mamusu_hikaku/main/data/skills.json",
+    "wikiUrl": "https://umamusu.wiki/Game:List_of_Skills",
+    "cacheHours": 24
+  },
+  "update": {
+    "releasesPageUrl": "https://github.com/naraha237/mamusu_hikaku/releases/latest"
+  }
+}
