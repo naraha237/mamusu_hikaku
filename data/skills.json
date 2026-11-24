@@ -4,7 +4,7 @@
   "license": "CC BY-SA",
   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
   "attribution": "スキルのデータは Umamusume Wiki(https://umamusu.wiki/Game:List_of_Skills、CC BY-SA)と GameTora(https://gametora.com/umamusume/skills)の内容を加工して利用しています。",
-  "fetchedAt": "2026-11-22T07:53:39.333Z",
+  "fetchedAt": "2026-11-24T03:57:29.250Z",
   "sourceLastModified": "Sun, 01 Nov 2026 20:57:38 GMT",
   "sources": [
     {
@@ -18,7 +18,7 @@
       "url": "https://gametora.com/umamusume/skills"
     }
   ],
-  "gametoraVersion": "7500a994",
+  "gametoraVersion": "b82a226c",
   "skills": [
     {"id":"110031","nameJa":"絶対は、ボクだ","nameEn":"Certain Victory","type":"unique","description":"最終コーナー以降に5番手以内で追いすがっていると最終直線にいるとき不屈の闘志で速度がすごく上がる","sp":0,"iconId":20013,"cond":"is_last_straight==1","kana":"ゼッタイハ、ボクダ"},
     {"id":"910031","nameJa":"絶対は、ボクだ","nameEn":"Certain Victory","type":"inherited","description":"最終コーナー以降に5番手以内で追いすがっていると最終直線にいるとき不屈の闘志で速度がすごく上がる","sp":200,"iconId":20011,"cond":"is_last_straight==1","kana":"ゼッタイハ、ボクダ"},
